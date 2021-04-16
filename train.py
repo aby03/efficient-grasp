@@ -1,6 +1,8 @@
 import argparse
 from dataset_processing.cornell_generator import CornellDataset
 
+from model import build_EfficientGrasp
+
 def parse_args(args):
     """
     Parse the arguments.
@@ -53,6 +55,17 @@ def main(args = None):
     print("\nCreating the Generators...")
     train_generator, validation_generator = create_generators(args)
     print("Done!")
+
+    # optionally choose specific GPU
+    if args.gpu:
+        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
+    print("\nBuilding the Model...")
+    model, prediction_model, all_layers = build_EfficientGrasp(args.phi,
+                                                              num_anchors = num_anchors,
+                                                              freeze_bn = not args.no_freeze_bn,
+                                                              print_architecture=False)
+
 
 def create_generators(args):
     """
