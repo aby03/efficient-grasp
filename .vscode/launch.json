@@ -1,0 +1,55 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: EfficientGrasp",
+            "type": "python",
+            "request": "launch",
+            // "program": "${workspaceFolder}/train.py",
+            "program": "${file}",
+            "python": "/home/aby/miniconda3/envs/EfficientGrasp/bin/python",
+            "args" : ["--phi", "0",
+                      "--batch-size", "1",
+                      "--lr", "1e-4",
+                      "--epochs", "200",
+                      "--no-snapshots",
+                    //   "--no-evaluation",
+                      "--gpu", "0",
+                      "--weights", "imagenet",
+                      // "--start-epoch", "200",
+                      // "--weights", "checkpoints/20_03_2021_03_03_11/cornell_best_grasp_accuracy.h5",
+                      "cornell", "/home/aby/Workspace/MTP/Datasets/Cornell/archive"]
+        },
+        {
+            "name": "Python: graspros",
+            "type": "python",
+            "request": "launch",
+            // "program": "${workspaceFolder}/train.py",
+            "program": "${file}",
+            "python": "/home/aby/miniconda3/envs/graspros/bin/python",
+            "args" : ["--phi", "0",
+                      "--batch-size", "1",
+                      "--lr", "1e-4",
+                      "--epochs", "200",
+                      "--no-snapshots",
+                      "--no-evaluation",
+                      "--gpu", "0",
+                      "--weights", "imagenet",
+                      // "--start-epoch", "200",
+                      // "--weights", "checkpoints/20_03_2021_03_03_11/cornell_best_grasp_accuracy.h5",
+                      "cornell", "/home/aby/Workspace/MTP/Datasets/Cornell/archive"]
+        }
+    ]
+}
+// python train.py --phi 0 --batch-size 1 --lr 1e-4 --weights imagenet cornell /home/aby/Workspace/MTP/Datasets/Cornell/archive
+// python train.py --phi 0 --batch-size 2 --lr 1e-7 --weights imagenet cornell /home/aby/Workspace/MTP/Datasets/Cornell/archive

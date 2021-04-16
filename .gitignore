@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Project Files not needed
+*.h5
+datasets/
+logs/
+checkpoints/
+
 # C extensions
 *.so
 
