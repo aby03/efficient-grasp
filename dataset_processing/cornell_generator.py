@@ -3,6 +3,8 @@ import os
 
 from dataset_processing import image
 from dataset_processing import grasp as gp
+# import image        # For Debugging
+# import grasp as gp  # For Debugging
 
 import numpy as np
 import random
@@ -171,7 +173,8 @@ class CornellDataset(Sequence):
                 count = 30
                 for g_id in range(len(gtbb.grs)):
                     # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
-                    grasp = (gtbb[g_id].as_grasp).as_list 
+                    grasp = (gtbb[g_id].as_grasp).as_list
+                    break
                     # # DEBUG
                     # g1 = gtbb[g_id]
                     # print('Orig points: ', g1.points)
@@ -188,17 +191,17 @@ class CornellDataset(Sequence):
                     # print("===========")
                     # # DEBUG
                     # Store each grasp for an image
-                    y_grasp_image.append(grasp)
-                    count -= 1
-                    if count == 0:
-                        break
-                while (count > 0):
-                    pad_0 = [1e8, 1e8, 1e8, 1e8, 1e8, 1e8]
-                    # pad_0 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                    y_grasp_image.append(pad_0)
-                    count -= 1
+                #     y_grasp_image.append(grasp)
+                #     count -= 1
+                #     if count == 0:
+                #         break
+                # while (count > 0):
+                #     pad_0 = [1e8, 1e8, 1e8, 1e8, 1e8, 1e8]
+                #     # pad_0 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                #     y_grasp_image.append(pad_0)
+                #     count -= 1
                 # Store all grasps for an image
-                y_grasp.append(y_grasp_image)
+                y_grasp.append(grasp)
 
                 
                 # # Pick random grasp
@@ -254,7 +257,9 @@ class CornellDataset(Sequence):
             # Store sample
             X[i,] = rgd_img
         if not self.run_test:
-            return X, np.asarray(y_grasp)
+            yy = np.asarray(y_grasp)
+            # print("debug: ", yy.shape)
+            return X, yy
         else:
             # Return RGB image for displaying
             X_rgb = np.empty((self.batch_size, self.output_size, self.output_size, self.n_channels))
@@ -263,17 +268,18 @@ class CornellDataset(Sequence):
 
             return [X, X_rgb], gtbb
 
-### TESTING
-dataset = "/home/aby/Workspace/MTP/Datasets/Cornell/archive"
-with open(dataset+'/train.txt', 'r') as filehandle:
-    train_data = json.load(filehandle)
+# ### TESTING
+# dataset = "/home/aby/Workspace/MTP/Datasets/Cornell/archive"
+# with open(dataset+'/train_1.txt', 'r') as filehandle:
+#     train_data = json.load(filehandle)
 
-train_generator = CornellDataset(
-    dataset,
-    train_data,
-    train=True,
-    shuffle=False,
-    batch_size=2
-)
+# train_generator = CornellDataset(
+#     dataset,
+#     train_data,
+#     train=True,
+#     shuffle=False,
+#     batch_size=1
+# )
 
-train_generator[0]
+# for i in range(0, 20):
+#     train_generator[i]

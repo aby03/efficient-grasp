@@ -1,7 +1,14 @@
 import argparse
+import sys
+import time
+import os
+import json
+# Preprocessing
 from dataset_processing.cornell_generator import CornellDataset
-
+# Model related
 from model import build_EfficientGrasp
+from tensorflow.keras.optimizers import Adam
+from losses import grasp_loss_bt
 
 def parse_args(args):
     """
@@ -32,8 +39,8 @@ def parse_args(args):
 
     # Fit generator arguments
     parser.add_argument('--multiprocessing', help = 'Use multiprocessing in fit_generator.', action = 'store_true')
-    parser.add_argument('--workers', help = 'Number of generator workers.', type = int, default = 4)
-    parser.add_argument('--max-queue-size', help = 'Queue length for multiprocessing workers in fit_generator.', type = int, default = 10)
+    parser.add_argument('--workers', help = 'Number of generator workers.', type = int, default = 1)
+    parser.add_argument('--max-queue-size', help = 'Queue length for multiprocessing workers in fit_generator.', type = int, default = 1)
     
     print(vars(parser.parse_args(args)))
     return parser.parse_args(args)
@@ -52,7 +59,7 @@ def main(args = None):
     args = parse_args(args)
 
     # create the generators
-    print("\nCreating the Generators...")
+    print("\nCreating the Generators...\n")
     train_generator, validation_generator = create_generators(args)
     print("Done!")
 
@@ -60,11 +67,31 @@ def main(args = None):
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    print("\nBuilding the Model...")
-    model, prediction_model, all_layers = build_EfficientGrasp(args.phi,
-                                                              num_anchors = num_anchors,
-                                                              freeze_bn = not args.no_freeze_bn,
-                                                              print_architecture=False)
+    print("\nBuilding Model!\n")
+    model = build_EfficientGrasp(args.phi,
+                                print_architecture=False)
+    print("\nCompiling Model!\n")
+    model.compile(optimizer=Adam(lr = args.lr, clipnorm = 0.001),
+                loss={'regression': grasp_loss_bt(args.batch_size)})
+
+    print("\nStarting Training!\n")
+    model.fit_generator(
+        generator = train_generator,
+        steps_per_epoch = train_generator.batches_per_epoch(),
+        initial_epoch = args.start_epoch,
+        epochs = args.epochs,
+        verbose = 1,
+        # callbacks = callbacks,
+        workers = args.workers,
+        use_multiprocessing = args.multiprocessing,
+        max_queue_size = args.max_queue_size,
+        # validation_data = validation_generator
+    )
+    print("\nTraining Complete! Saving...\n")
+    # os.makedirs(args.snapshot_path, exist_ok = True)
+    # model.save(os.path.join(args.snapshot_path, '{dataset_type}_finish.h5'.format(dataset_type = args.dataset_type)))
+    print("\nEnd of Code...\n")
+    
 
 
 def create_generators(args):
@@ -104,3 +131,6 @@ def create_generators(args):
         raise ValueError('Invalid data type received: {}'.format(args.dataset_type))
 
     return train_generator, validation_generator
+
+if __name__ == '__main__':
+    main()
