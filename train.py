@@ -5,10 +5,19 @@ import os
 import json
 # Preprocessing
 from dataset_processing.cornell_generator import CornellDataset
+
+import tensorflow as tf
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
+config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
 # Model related
 from model import build_EfficientGrasp
+from tensorflow import keras
 from tensorflow.keras.optimizers import Adam
 from losses import grasp_loss_bt
+from custom_load_weights import custom_load_weights
+from efficientnet import BASE_WEIGHTS_PATH, WEIGHTS_HASHES
 
 def parse_args(args):
     """
@@ -52,6 +61,15 @@ def main(args = None):
     Args:
         args: parseargs object containing configuration for the training procedure.
     """
+    # Fix cudnn initialization error for tf 1.15 py3.7 CUDA 10.2 EfficientGrasp environment 
+    # import tensorflow as tf
+    # physical_devices = tf.config.experimental.list_physical_devices('GPU')
+    # assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
+    # config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+    # import tensorflow as tf
+    # physical_devices = tf.config.list_physical_devices('GPU') 
+    # tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
     # parse arguments
     if args is None:
@@ -68,11 +86,42 @@ def main(args = None):
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     print("\nBuilding Model!\n")
-    model = build_EfficientGrasp(args.phi,
+    model, prediction_model, all_layers = build_EfficientGrasp(args.phi,
                                 print_architecture=False)
+
+    # load pretrained weights
+    if args.weights:
+        if args.weights == 'imagenet':
+            model_name = 'efficientnet-b{}'.format(args.phi)
+            file_name = '{}_weights_tf_dim_ordering_tf_kernels_autoaugment_notop.h5'.format(model_name)
+            file_hash = WEIGHTS_HASHES[model_name][1]
+            weights_path = keras.utils.get_file(file_name,
+                                                BASE_WEIGHTS_PATH + file_name,
+                                                cache_subdir='models',
+                                                file_hash=file_hash)
+            model.load_weights(weights_path, by_name=True)
+        else:
+            print('Loading model, this may take a second...')
+            custom_load_weights(filepath = args.weights, layers = all_layers, skip_mismatch = True)
+            print("\nCustom Weights Loaded!\n")
+
+    # freeze backbone layers
+    if args.freeze_backbone:
+        # 227, 329, 329, 374, 464, 566, 656
+        for i in range(1, [227, 329, 329, 374, 464, 566, 656][args.phi]):
+            model.layers[i].trainable = False
+
     print("\nCompiling Model!\n")
     model.compile(optimizer=Adam(lr = args.lr, clipnorm = 0.001),
-                loss={'regression': grasp_loss_bt(args.batch_size)})
+                loss={'final_layer': grasp_loss_bt(args.batch_size)})
+
+    # create the callbacks
+    callbacks = create_callbacks(
+        model,
+        prediction_model,
+        validation_generator,
+        args,
+    )
 
     print("\nStarting Training!\n")
     model.fit_generator(
@@ -131,6 +180,82 @@ def create_generators(args):
         raise ValueError('Invalid data type received: {}'.format(args.dataset_type))
 
     return train_generator, validation_generator
+
+def create_callbacks(training_model, prediction_model, validation_generator, args):
+    """
+    Creates the callbacks to use during training.
+
+    Args:
+        training_model: The model that is used for training.
+        prediction_model: The model that should be used for validation.
+        validation_generator: The generator for creating validation data.
+        args: parseargs args object.
+
+    Returns:
+        A list of callbacks used for training.
+    """
+    callbacks = []
+
+    tensorboard_callback = None
+    
+    if args.dataset_type == "cornell":
+        snapshot_path = args.snapshot_path
+        # save_path = args.validation_image_save_path
+        tensorboard_dir = args.tensorboard_dir
+        metric_to_monitor = "grasp_accuracy"
+        mode = "max"
+    else:
+        snapshot_path = args.snapshot_path
+        # save_path = args.validation_image_save_path
+        tensorboard_dir = args.tensorboard_dir
+        
+    # if save_path:
+    #     os.makedirs(save_path, exist_ok = True)
+
+    if tensorboard_dir:
+        tensorboard_callback = keras.callbacks.TensorBoard(
+            log_dir = tensorboard_dir,
+            histogram_freq = 1,
+            write_graph = True,
+            write_grads = False,
+            write_images = False,
+            embeddings_freq = 0,
+            embeddings_layer_names = None,
+            embeddings_metadata = None,
+            profile_batch = 2
+        )
+        callbacks.append(tensorboard_callback)
+
+    if args.evaluation and validation_generator:
+        from eval.eval_callback import Evaluate
+        evaluation = Evaluate(validation_generator, prediction_model, tensorboard = tensorboard_callback)
+        callbacks.append(evaluation)
+
+    # save the model
+    if args.snapshots:
+        # ensure directory created first; otherwise h5py will error after epoch.
+        os.makedirs(snapshot_path, exist_ok = True)
+        # checkpoint = keras.callbacks.ModelCheckpoint(os.path.join(snapshot_path, 'phi_{phi}_{dataset_type}_best_{metric}.h5'.format(phi = str(args.phi), metric = metric_to_monitor, dataset_type = args.dataset_type)),
+        checkpoint = keras.callbacks.ModelCheckpoint(os.path.join(snapshot_path, '{dataset_type}_best_{metric}.h5'.format(phi = str(args.phi), metric = metric_to_monitor, dataset_type = args.dataset_type)),
+                                                     verbose = 1,
+                                                     #save_weights_only = True,
+                                                     save_best_only = True,
+                                                     monitor = metric_to_monitor,
+                                                     mode = mode)
+        callbacks.append(checkpoint)
+
+    callbacks.append(keras.callbacks.ReduceLROnPlateau(
+        monitor    = 'loss',
+        factor     = 0.5,
+        patience   = 10,
+        verbose    = 1,
+        mode       = 'min',
+        min_delta  = 0.0001,
+        cooldown   = 0,
+        min_lr     = 1e-7
+    ))
+
+    return callbacks
 
 if __name__ == '__main__':
     main()

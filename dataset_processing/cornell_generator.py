@@ -174,7 +174,6 @@ class CornellDataset(Sequence):
                 for g_id in range(len(gtbb.grs)):
                     # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
                     grasp = (gtbb[g_id].as_grasp).as_list
-                    break
                     # # DEBUG
                     # g1 = gtbb[g_id]
                     # print('Orig points: ', g1.points)
@@ -191,17 +190,17 @@ class CornellDataset(Sequence):
                     # print("===========")
                     # # DEBUG
                     # Store each grasp for an image
-                #     y_grasp_image.append(grasp)
-                #     count -= 1
-                #     if count == 0:
-                #         break
-                # while (count > 0):
-                #     pad_0 = [1e8, 1e8, 1e8, 1e8, 1e8, 1e8]
-                #     # pad_0 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                #     y_grasp_image.append(pad_0)
-                #     count -= 1
+                    y_grasp_image.append(grasp)
+                    count -= 1
+                    if count == 0:
+                        break
+                while (count > 0):
+                    pad_0 = [1e8, 1e8, 1e8, 1e8, 1e8, 1e8]
+                    # pad_0 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                    y_grasp_image.append(pad_0)
+                    count -= 1
                 # Store all grasps for an image
-                y_grasp.append(grasp)
+                y_grasp.append(y_grasp_image)
 
                 
                 # # Pick random grasp
