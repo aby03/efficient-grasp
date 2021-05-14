@@ -69,6 +69,7 @@ def build_EfficientGrasp(phi,
     # Reshape to (batch, 1, 6) and then Concatenate 30 times
     grasp_regression_train = layers.Concatenate(axis=1, name="final_layer")([grasp_regression for x in range(0, 30)])
 
+    # Prediction is (batch, 6)
     grasp_regression_pred = layers.Flatten(name='regression_p')(grasp_regression)
 
     # Build Complete Model

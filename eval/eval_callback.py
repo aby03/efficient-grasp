@@ -1,12 +1,13 @@
 import tensorflow as tf
 from tensorflow import keras
-import progressbar
+# import progressbar
+from tqdm import tqdm
 import numpy as np
 # from eval.common import evaluate
 import math
 import sys
 sys.path.append(".")
-from generators.cornell import *
+# from generators.cornell import *
 from dataset_processing.grasp import Grasp
 from losses import grasp_loss
 
@@ -36,7 +37,7 @@ def _get_detections(generator, model, save_path = None):
     pred_grasps = [None for i in range(generator.size()) ]
     true_grasps = [None for i in range(generator.size()) ]
 
-    for i in progressbar.progressbar(range(generator.size()), prefix='Running network: '):
+    for i in tqdm(range(generator.size())):
         image_bt, output_bt    = generator[i]
         true_grasp_bt = output_bt
         # raw_image    = generator.load_image(i)

@@ -11,6 +11,9 @@ physical_devices = tf.config.experimental.list_physical_devices('GPU')
 assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
 config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
+# Optimization after profiling
+os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
+
 # Model related
 from model import build_EfficientGrasp
 from tensorflow import keras
@@ -122,23 +125,24 @@ def main(args = None):
         validation_generator,
         args,
     )
-
+    
     print("\nStarting Training!\n")
-    model.fit_generator(
+    history = model.fit_generator(
         generator = train_generator,
         steps_per_epoch = train_generator.batches_per_epoch(),
         initial_epoch = args.start_epoch,
         epochs = args.epochs,
         verbose = 1,
-        # callbacks = callbacks,
+        callbacks = callbacks,
         workers = args.workers,
         use_multiprocessing = args.multiprocessing,
         max_queue_size = args.max_queue_size,
         # validation_data = validation_generator
     )
+    print(history.history)
     print("\nTraining Complete! Saving...\n")
-    # os.makedirs(args.snapshot_path, exist_ok = True)
-    # model.save(os.path.join(args.snapshot_path, '{dataset_type}_finish.h5'.format(dataset_type = args.dataset_type)))
+    os.makedirs(args.snapshot_path, exist_ok = True)
+    model.save(os.path.join(args.snapshot_path, '{dataset_type}_finish.h5'.format(dataset_type = args.dataset_type)))
     print("\nEnd of Code...\n")
     
 
@@ -222,7 +226,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
             embeddings_freq = 0,
             embeddings_layer_names = None,
             embeddings_metadata = None,
-            profile_batch = 2
+            profile_batch = '5,10'
         )
         callbacks.append(tensorboard_callback)
 
@@ -244,6 +248,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
                                                      mode = mode)
         callbacks.append(checkpoint)
 
+    # Learning Rate Schedule
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
         monitor    = 'loss',
         factor     = 0.5,

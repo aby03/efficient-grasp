@@ -16,3 +16,17 @@ def grasp_loss_bt(batch_sz = 1):
 
         return loss
     return _grasp_loss_bt    
+
+def grasp_loss(y_true, y_pred):
+    theta_err_wt = 1
+    y_err = y_true[0] - y_pred[0]
+    x_err = y_true[1] - y_pred[1]
+    
+    sin_err = y_true[2] - y_pred[2]
+    cos_err = y_true[3] - y_pred[3]
+
+    h_err = y_true[4] - y_pred[4]
+    w_err = y_true[5] - y_pred[5]
+    # loss = x_err ** 2 + y_err ** 2 + theta_err_wt * (theta_err**2) + h_err ** 2 + w_err ** 2
+    loss = (y_err ** 2 + x_err ** 2 + sin_err**2 + cos_err**2 + h_err ** 2 + w_err ** 2)/6
+    return loss
