@@ -14,7 +14,7 @@ from layers import ClipBoxes, RegressBoxes, FilterDetections, wBiFPNAdd, BatchNo
 import numpy as np
 
 
-# MOMENTUM = 0.997
+MOMENTUM = 0.997
 EPSILON = 1e-4
 
 
@@ -442,4 +442,4 @@ def get_scaled_parameters(phi):
                   "backbone_class": backbones[phi]}    
     return parameters
 
-build_EfficientGrasp(0, print_architecture=False)
+# build_EfficientGrasp(0, print_architecture=False)

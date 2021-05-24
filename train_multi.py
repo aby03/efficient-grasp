@@ -15,10 +15,10 @@ config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
 
 # Model related
-from model import build_EfficientGrasp
+from model_multi import build_EfficientGrasp_multi
 from tensorflow import keras
 from tensorflow.keras.optimizers import Adam
-from losses import grasp_loss_bt
+from losses import grasp_loss_multi
 from custom_load_weights import custom_load_weights
 from efficientnet import BASE_WEIGHTS_PATH, WEIGHTS_HASHES
 
@@ -51,8 +51,8 @@ def parse_args(args):
 
     # Fit generator arguments
     parser.add_argument('--multiprocessing', help = 'Use multiprocessing in fit_generator.', action = 'store_true')
-    parser.add_argument('--workers', help = 'Number of generator workers.', type = int, default = 2)
-    parser.add_argument('--max-queue-size', help = 'Queue length for multiprocessing workers in fit_generator.', type = int, default = 2)
+    parser.add_argument('--workers', help = 'Number of generator workers.', type = int, default = 1)
+    parser.add_argument('--max-queue-size', help = 'Queue length for multiprocessing workers in fit_generator.', type = int, default = 1)
     
     print(vars(parser.parse_args(args)))
     return parser.parse_args(args)
@@ -89,7 +89,7 @@ def main(args = None):
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     print("\nBuilding Model!\n")
-    model, prediction_model, all_layers = build_EfficientGrasp(args.phi,
+    model, prediction_model, all_layers = build_EfficientGrasp_multi(args.phi,
                                 print_architecture=False)
 
     # load pretrained weights
@@ -117,7 +117,9 @@ def main(args = None):
     print("\nCompiling Model!\n")
     model.compile(  
                     optimizer=Adam(lr = args.lr, clipnorm = 0.001),
-                    loss={'final_layer': grasp_loss_bt(args.batch_size)}
+                    loss={'regression_out': grasp_loss_multi(args.batch_size),
+                        #   'regression_score' score_loss_multi(),
+                         }
                     # metric=['grasp_accuracy']
                  )
 
@@ -146,7 +148,8 @@ def main(args = None):
     )
     print("\nTraining Complete! Saving...\n")
     os.makedirs(args.snapshot_path, exist_ok = True)
-    model.save_weights(os.path.join(args.snapshot_path, '{dataset_type}_finish.h5'.format(dataset_type = args.dataset_type)))
+    # NOT WORKING
+    model.save(os.path.join(args.snapshot_path, '{dataset_type}_finish.h5'.format(dataset_type = args.dataset_type)))
     print("\nEnd of Code...\n")
     
 
@@ -167,9 +170,9 @@ def create_generators(args):
     if args.dataset_type == 'cornell':
         dataset = args.cornell_path
         # open output file for reading
-        with open(dataset+'/train_0.txt', 'r') as filehandle:
+        with open(dataset+'/train_1.txt', 'r') as filehandle:
             train_data = json.load(filehandle)
-        with open(dataset+'/valid_0.txt', 'r') as filehandle:
+        with open(dataset+'/valid_1.txt', 'r') as filehandle:
             valid_data = json.load(filehandle)
         
         train_generator = CornellDataset(
@@ -236,7 +239,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
 
     if args.evaluation and validation_generator:
         from eval.eval_callback import Evaluate
-        evaluation = Evaluate(validation_generator, prediction_model, tensorboard = tensorboard_callback)
+        evaluation = Evaluate(validation_generator, prediction_model, tensorboard = tensorboard_callback, multi_pred=True)
         evaluation._supports_tf_logs = True
         callbacks.append(evaluation)
 
@@ -260,7 +263,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
         checkpoint = keras.callbacks.ModelCheckpoint(os.path.join(snapshot_path, '{dataset_type}_best_{metric}.h5'.format(phi = str(args.phi), metric = metric_to_monitor, dataset_type = args.dataset_type)),
                                                      verbose = 1,
                                                      save_weights_only = True,
-                                                     save_best_only = True,
+                                                    #  save_best_only = True,
                                                      monitor = metric_to_monitor,
                                                      save_freq='epoch',
                                                      mode = mode)

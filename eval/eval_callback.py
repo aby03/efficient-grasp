@@ -70,6 +70,7 @@ def evaluate(
     max_detections = 100,
     save_path = None,
     diameter_threshold = 0.1,
+    multi_pred=False
 ):
     """ Evaluate a given dataset using a given model.
 
@@ -87,77 +88,166 @@ def evaluate(
     # gather all detections and annotations
     pred_grasps, true_grasps = _get_detections(generator, model, save_path=save_path)
     
-    # Grasp Loss
-    loss_v = []
-    min_loss_index = []
-    # For an image
-    for j in range(len(true_grasps)):
-        min_loss = float('inf')
-        min_index = 0
-        # For a grasp
-        for i in range(len(true_grasps[j])):
-            cur_loss = grasp_loss(true_grasps[j][i], pred_grasps[j])
-            # print('Im {}, G {}, Loss {}'.format(j, i, cur_loss))
-            if cur_loss < min_loss:
-                min_loss = cur_loss
-                min_index = i
-        loss_v.append(min_loss)
-        min_loss_index.append(min_index)
-        # print(' === Im {} Min Loss {} Loss Index {}'.format(j, min_loss, min_index))
-    avg_grasp_loss = sum(loss_v) / len(loss_v)
+    if not multi_pred:
+        ## Single Grasp Model
+        # Grasp Loss
+        loss_v = []
+        min_loss_index = []
+        # For an image
+        for j in range(len(true_grasps)):
+            min_loss = float('inf')
+            min_index = 0
+            # For a grasp
+            for i in range(len(true_grasps[j])):
+                cur_loss = grasp_loss(true_grasps[j][i], pred_grasps[j])
+                # print('Im {}, G {}, Loss {}'.format(j, i, cur_loss))
+                if cur_loss < min_loss:
+                    min_loss = cur_loss
+                    min_index = i
+            loss_v.append(min_loss)
+            min_loss_index.append(min_index)
+            # print(' === Im {} Min Loss {} Loss Index {}'.format(j, min_loss, min_index))
+        avg_grasp_loss = sum(loss_v) / len(loss_v)
 
-    # IoU Angle Diff
-    correct_grasp_count = 0
-    iou_list = []
-    angle_diff_list = []
-    for j in range(len(true_grasps)):
-        index = min_loss_index[j]
-        # Converted to Grasp obj, unnormalized, in [y,x] format
-        true_grasp_obj = Grasp(true_grasps[j][index][0:2], *true_grasps[j][index][2:], unnorm = True)
-        pred_grasp_obj = Grasp(pred_grasps[j][0:2], *pred_grasps[j][2:], unnorm=True)
-        # converted to list of bboxes in [x, y] format
-        bbox_true = true_grasp_obj.as_bbox
-        bbox_pred = pred_grasp_obj.as_bbox
+        # IoU Angle Diff
+        correct_grasp_count = 0
+        iou_list = []
+        angle_diff_list = []
+        for j in range(len(true_grasps)):
+            index = min_loss_index[j]
+            # Converted to Grasp obj, unnormalized, in [y,x] format
+            true_grasp_obj = Grasp(true_grasps[j][index][0:2], *true_grasps[j][index][2:], unnorm = True)
+            pred_grasp_obj = Grasp(pred_grasps[j][0:2], *pred_grasps[j][2:], unnorm=True)
+            # converted to list of bboxes in [x, y] format
+            bbox_true = true_grasp_obj.as_bbox
+            bbox_pred = pred_grasp_obj.as_bbox
+            
+            #IoU
+            try:
+                p1 = Polygon([bbox_true[0], bbox_true[1], bbox_true[2], bbox_true[3], bbox_true[0]])
+                p2 = Polygon([bbox_pred[0], bbox_pred[1], bbox_pred[2], bbox_pred[3], bbox_pred[0]])
+                iou = p1.intersection(p2).area / (p1.area +p2.area -p1.intersection(p2).area)
+                iou_list.append(iou)
+            except Exception as e: 
+                print('IoU ERROR', e)
+                print('Bbox pred:', bbox_pred)
+                print('pred grasp:', pred_grasps[j])
+                print('Bbox true:', bbox_true)
+            
+            #Angle Diff
+            true_sin = true_grasp_obj.sin_t
+            true_cos = true_grasp_obj.cos_t  
+            if true_cos != 0:
+                true_angle = np.arctan(true_sin/true_cos) * 180/np.pi
+            else:
+                true_angle = 90
+            
+            pred_sin = pred_grasp_obj.sin_t
+            pred_cos = pred_grasp_obj.cos_t
+            if pred_cos != 0:
+                pred_angle = np.arctan(pred_sin/pred_cos) * 180/np.pi
+            else:
+                pred_angle = 90
+            # true_angle = true_grasps[j][index][2] * 180.0/np.pi
+            # pred_angle = pred_grasps[j][2] * 180.0/np.pi
+            
+            angle_diff = np.abs(pred_angle - true_angle)
+            angle_diff = min(angle_diff, 180.0 - angle_diff)
+            angle_diff_list.append(angle_diff)
+            
+            if angle_diff < 30. and iou >= 0.25:
+                correct_grasp_count += 1
+                # print('image: %d | duration = %.2f | count = %d | iou = %.2f | angle_difference = %.2f' %(step, duration, count, iou, angle_diff))
+        grasp_accuracy = correct_grasp_count / len(true_grasps)
+        avg_iou = sum(iou_list) / len(true_grasps)
+        avg_angle_diff = sum(angle_diff_list) / len(true_grasps)
+    else:
+        '''
+            Multigrasp Model
+            pred_grasps: (b, 100, 7)
+            true_grasps: (b, 30, 6)
+        '''
+        ## Grasp Loss
+        loss_v = []
+        min_loss_index = []
+        # For each image
+        for i in range(len(pred_grasps)):
+            loss_grasp = []
+            min_index_grasp = []
+            # For each pred grasp
+            for j in range(len(pred_grasps[i])):
+                min_loss = float('inf')
+                min_index = 0
+                # For each true_grasp
+                for k in range(len(true_grasps[i])):
+                    cur_loss = grasp_loss(true_grasps[i][k], pred_grasps[i][j][0:6])
+                    # print('Im {}, G {}, Loss {}'.format(j, i, cur_loss))
+                    if cur_loss < min_loss:
+                        min_loss = cur_loss
+                        min_index = k
+                loss_grasp.append(min_loss)
+                min_index_grasp.append(min_index)
+            loss_v.append(loss_grasp)
+            min_loss_index.append(min_index_grasp)
+        avg_grasp_loss = sum([sum(los) for los in loss_v]) / len(loss_v)*len(loss_v[0])
         
-        #IoU
-        try:
-            p1 = Polygon([bbox_true[0], bbox_true[1], bbox_true[2], bbox_true[3], bbox_true[0]])
-            p2 = Polygon([bbox_pred[0], bbox_pred[1], bbox_pred[2], bbox_pred[3], bbox_pred[0]])
-            iou = p1.intersection(p2).area / (p1.area +p2.area -p1.intersection(p2).area)
-            iou_list.append(iou)
-        except Exception as e: 
-            print('IoU ERROR', e)
-            print('Bbox pred:', bbox_pred)
-            print('pred grasp:', pred_grasps[j])
-            print('Bbox true:', bbox_true)
-        
-        #Angle Diff
-        true_sin = true_grasp_obj.sin_t
-        true_cos = true_grasp_obj.cos_t  
-        if true_cos != 0:
-            true_angle = np.arctan(true_sin/true_cos) * 180/np.pi
-        else:
-            true_angle = 90
-        
-        pred_sin = pred_grasp_obj.sin_t
-        pred_cos = pred_grasp_obj.cos_t
-        if pred_cos != 0:
-            pred_angle = np.arctan(pred_sin/pred_cos) * 180/np.pi
-        else:
-            pred_angle = 90
-        # true_angle = true_grasps[j][index][2] * 180.0/np.pi
-        # pred_angle = pred_grasps[j][2] * 180.0/np.pi
-        
-        angle_diff = np.abs(pred_angle - true_angle)
-        angle_diff = min(angle_diff, 180.0 - angle_diff)
-        angle_diff_list.append(angle_diff)
-        
-        if angle_diff < 30. and iou >= 0.25:
-            correct_grasp_count += 1
-            # print('image: %d | duration = %.2f | count = %d | iou = %.2f | angle_difference = %.2f' %(step, duration, count, iou, angle_diff))
-    grasp_accuracy = correct_grasp_count / len(true_grasps)
-    avg_iou = sum(iou_list) / len(true_grasps)
-    avg_angle_diff = sum(angle_diff_list) / len(true_grasps)
+        ## IoU Angle Diff
+        correct_grasp_count = 0
+        iou_list = []
+        angle_diff_list = []
+        ### TO DO FROM HERE
+        ## For Image
+        for i in range(len(pred_grasps)):
+            ## For Each Pred Grasp
+            for j in range(len(pred_grasps[i])):
+                index = min_loss_index[i][j]
+                # Converted to Grasp obj, unnormalized, in [y,x] format
+                true_grasp_obj = Grasp(true_grasps[i][index][0:2], *true_grasps[i][index][2:], unnorm = True)
+                pred_grasp_obj = Grasp(pred_grasps[i][j][0:2], *pred_grasps[i][j][2:6], unnorm=True)
+                # converted to list of bboxes in [x, y] format
+                bbox_true = true_grasp_obj.as_bbox
+                bbox_pred = pred_grasp_obj.as_bbox
+                
+                #IoU
+                try:
+                    p1 = Polygon([bbox_true[0], bbox_true[1], bbox_true[2], bbox_true[3], bbox_true[0]])
+                    p2 = Polygon([bbox_pred[0], bbox_pred[1], bbox_pred[2], bbox_pred[3], bbox_pred[0]])
+                    iou = p1.intersection(p2).area / (p1.area +p2.area -p1.intersection(p2).area)
+                    iou_list.append(iou)
+                except Exception as e: 
+                    print('IoU ERROR', e)
+                    print('Bbox pred:', bbox_pred)
+                    print('pred grasp:', pred_grasps[j])
+                    print('Bbox true:', bbox_true)
+                
+                #Angle Diff
+                true_sin = true_grasp_obj.sin_t
+                true_cos = true_grasp_obj.cos_t  
+                if true_cos != 0:
+                    true_angle = np.arctan(true_sin/true_cos) * 180/np.pi
+                else:
+                    true_angle = 90
+                
+                pred_sin = pred_grasp_obj.sin_t
+                pred_cos = pred_grasp_obj.cos_t
+                if pred_cos != 0:
+                    pred_angle = np.arctan(pred_sin/pred_cos) * 180/np.pi
+                else:
+                    pred_angle = 90
+                # true_angle = true_grasps[j][index][2] * 180.0/np.pi
+                # pred_angle = pred_grasps[j][2] * 180.0/np.pi
+                
+                angle_diff = np.abs(pred_angle - true_angle)
+                angle_diff = min(angle_diff, 180.0 - angle_diff)
+                angle_diff_list.append(angle_diff)
+                
+                if angle_diff < 30. and iou >= 0.25:
+                    correct_grasp_count += 1
+                    # print('image: %d | duration = %.2f | count = %d | iou = %.2f | angle_difference = %.2f' %(step, duration, count, iou, angle_diff))
+        grasp_accuracy = correct_grasp_count / len(pred_grasps)*len(pred_grasps[0])
+        avg_iou = sum(iou_list) / len(pred_grasps)*len(pred_grasps[0])
+        avg_angle_diff = sum(angle_diff_list) / len(pred_grasps)*len(pred_grasps[0])
+        ### TO DO END HERE
 
     return avg_grasp_loss, grasp_accuracy, avg_iou, avg_angle_diff
 
@@ -176,7 +266,8 @@ class Evaluate(keras.callbacks.Callback):
         save_path = None,
         tensorboard = None,
         weighted_average = False,
-        verbose = 1
+        verbose = 1,
+        multi_pred = False
     ):
         """ Evaluate a given dataset using a given model at the end of every epoch during training.
 
@@ -202,17 +293,21 @@ class Evaluate(keras.callbacks.Callback):
         self.verbose         = verbose
         self.diameter_threshold = diameter_threshold
         self.active_model = model
+        self.multi_pred = multi_pred
+        self.summary_writer = tf.summary.create_file_writer(self.tensorboard.log_dir+"/validation")
+
 
         super(Evaluate, self).__init__()
 
-    def on_epoch_end(self, epoch, logs = None):
-        logs = logs or {}
+    def on_epoch_end(self, epoch, logs):
+        # logs = logs or {}
 
         # run evaluation
         avg_grasp_loss, grasp_accuracy, avg_iou, avg_angle_diff = evaluate(
             self.generator,
             self.active_model,
-            save_path=self.save_path
+            save_path=self.save_path,
+            multi_pred=self.multi_pred
         )
         
         if self.tensorboard is not None:
@@ -237,10 +332,12 @@ class Evaluate(keras.callbacks.Callback):
 
                 self.tensorboard.writer.add_summary(summary, epoch)
             else:
-                tf.summary.scalar('val_grasp_loss', avg_grasp_loss, epoch)
-                tf.summary.scalar('grasp_accuracy', grasp_accuracy, epoch)
-                tf.summary.scalar('avg_iou', avg_iou, epoch)
-                tf.summary.scalar('avg_angle_diff', avg_angle_diff, epoch)
+                with self.summary_writer.as_default():
+                    tf.summary.scalar('val_grasp_loss', avg_grasp_loss, step=epoch)
+                    tf.summary.scalar('grasp_accuracy', grasp_accuracy, step=epoch)
+                    tf.summary.scalar('avg_iou', avg_iou, step=epoch)
+                    tf.summary.scalar('avg_angle_diff', avg_angle_diff, step=epoch)
+                    self.summary_writer.flush()
 
         logs['val_grasp_loss'] = avg_grasp_loss
         logs['grasp_accuracy'] = grasp_accuracy
@@ -252,3 +349,4 @@ class Evaluate(keras.callbacks.Callback):
             print('grasp_accuracy: {:.4f}'.format(grasp_accuracy))
             print('avg_iou: {:.2f}'.format(avg_iou))
             print('avg_angle_diff: {:.2f}'.format(avg_angle_diff))
+        return logs
