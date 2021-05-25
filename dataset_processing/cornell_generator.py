@@ -121,6 +121,7 @@ class CornellDataset(Sequence):
             # rgd_img.img = rgd_img.img.transpose((2, 0, 1))
         return rgd_img.img
 
+    @staticmethod
     def load_custom_image(filename, output_size=512, normalise=True):
         rgd_img = image.Image.from_file(filename)
         rgd_img.resize((output_size, output_size))
