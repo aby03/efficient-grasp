@@ -1,3 +1,5 @@
+# python train.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
+
 import argparse
 import sys
 import time
@@ -7,12 +9,12 @@ import json
 from dataset_processing.cornell_generator import CornellDataset
 
 import tensorflow as tf
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
-config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
+# physical_devices = tf.config.experimental.list_physical_devices('GPU')
+# assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
+# config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-# Optimization after profiling
-os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
+# # Optimization after profiling
+# os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
 
 # Model related
 from model import build_EfficientGrasp
