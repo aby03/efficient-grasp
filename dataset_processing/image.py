@@ -52,11 +52,19 @@ class Image:
 
     def normalise(self):
         """
+        Normalise the image by converting to float [-1,1] and zero-centering
+        """
+        self.img = self.img.astype(np.float32) / 127.5
+        self.img -= 1.0
+
+    def unnormalise(self):
+        """
         Normalise the image by converting to float [0,1] and zero-centering
         """
-        self.img = self.img.astype(np.float32) / 255.0
-        self.img -= self.img.mean()
-
+        self.img += 1.0
+        self.img = np.rint(self.img * 127.5)
+        self.img = self.img.astype(np.uint8)
+    
     def resize(self, shape):
         """
         Resize image to shape.

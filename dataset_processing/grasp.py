@@ -4,8 +4,8 @@ from skimage.draw import polygon
 from skimage.feature import peak_local_max
 
 # Normalization constants
-GRASP_MEAN = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-GRASP_STD = [1.0, 1.0, 0.02, 0.02, 1.0, 1.0]
+GRASP_MEAN = [256.0, 256.0, 0.0, 0.0, 0.0, 0.0]
+GRASP_STD = [50.0, 50.0, 1.0, 1.0, 20.0, 20.0]
 # GRASP_MEAN = [241.8, 291.3, 0.1664, 0.1093, 27.33, 46.25]
 # GRASP_STD = [26.88,  42.22,   0.7140,  0.6712, 11.29, 21.29]
 y_std = GRASP_STD[0]
