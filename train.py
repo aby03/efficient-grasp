@@ -1,5 +1,6 @@
 ## Kaggle
 # python train.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
+# python train.py --phi 0 --batch-size 2 --lr 1e-4 --epochs 200 --snapshot-path /kaggle/working/efficient-grasp/ckpts/may26_light_1 --tensorboard-dir /kaggle/working/efficient-grasp/logs --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
 ## Colab
 # python train.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --tensorboard-dir /content/drive/MyDrive/MTP/logs --weights imagenet cornell /content/drive/MyDrive/archive
 # python train.py --phi 0 --batch-size 16 --lr 1e-4 --epochs 200 --snapshot-path /content/drive/MyDrive/MTP/grasp_ckp/26may_light_1 --tensorboard-dir /content/drive/MyDrive/MTP/logs --weights imagenet cornell /content/drive/MyDrive/archive
@@ -57,7 +58,7 @@ def parse_args(args):
 
     # Fit generator arguments
     parser.add_argument('--multiprocessing', help = 'Use multiprocessing in fit_generator.', action = 'store_true')
-    parser.add_argument('--workers', help = 'Number of generator workers.', type = int, default = 2)
+    parser.add_argument('--workers', help = 'Number of generator workers.', type = int, default = 1)
     parser.add_argument('--max-queue-size', help = 'Queue length for multiprocessing workers in fit_generator.', type = int, default = 2)
     
     print(vars(parser.parse_args(args)))

@@ -63,9 +63,8 @@ class CornellDataset(Sequence):
             np.random.shuffle(self.indexes)
 
     def __len__(self):
-        """ Size of the dataset.
-        """
-        return len(self.rgd_files)
+        'Denotes the number of batches per epoch (NEEDED THIS FOR INDEX LIMITS in __get_item__)'
+        return int(np.floor(len(self.rgd_files) / self.batch_size))
 
     def size(self):
         """ Size of the dataset.
@@ -225,6 +224,7 @@ class CornellDataset(Sequence):
                 
             # Store Image sample
             X[i,] = rgd_img
+
         if not self.run_test:
             yy = np.asarray(y_grasp)
             # print("debug: ", yy.shape)
@@ -237,17 +237,18 @@ class CornellDataset(Sequence):
 
             return [X, X_rgb], gtbb
 
-# ### TESTING
+# ### TESTING 
 # dataset = "/home/aby/Workspace/MTP/Datasets/Cornell/archive"
+# dataset = "/kaggle/input/cornell-preprocessed/Cornell/archive"
 # with open(dataset+'/train_1.txt', 'r') as filehandle:
 #     train_data = json.load(filehandle)
 
 # train_generator = CornellDataset(
 #     dataset,
 #     train_data,
-#     train=True,
+#     train=False,
 #     shuffle=False,
-#     batch_size=1
+#     batch_size=2
 # )
 
 # for i in range(0, 20):
