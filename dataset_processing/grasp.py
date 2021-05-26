@@ -507,7 +507,7 @@ class Grasp:
         :return: string in Jacquard format
         """
         # Output in jacquard format.
-        angle = np.arctan(sin_t/cos_t)
+        angle = np.arctan(self.sin_t/self.cos_t)
         return '%0.2f;%0.2f;%0.2f;%0.2f;%0.2f' % (
             self.center[1] * scale, self.center[0] * scale, -1 * angle * 180 / np.pi, self.length * scale,
             self.width * scale)

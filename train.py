@@ -1,3 +1,5 @@
+# python train.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
+
 import argparse
 import sys
 import time
@@ -7,12 +9,12 @@ import json
 from dataset_processing.cornell_generator import CornellDataset
 
 import tensorflow as tf
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
-config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
+# physical_devices = tf.config.experimental.list_physical_devices('GPU')
+# assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
+# config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-# Optimization after profiling
-os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
+# # Optimization after profiling
+# os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
 
 # Model related
 from model import build_EfficientGrasp
@@ -51,8 +53,8 @@ def parse_args(args):
 
     # Fit generator arguments
     parser.add_argument('--multiprocessing', help = 'Use multiprocessing in fit_generator.', action = 'store_true')
-    parser.add_argument('--workers', help = 'Number of generator workers.', type = int, default = 1)
-    parser.add_argument('--max-queue-size', help = 'Queue length for multiprocessing workers in fit_generator.', type = int, default = 1)
+    parser.add_argument('--workers', help = 'Number of generator workers.', type = int, default = 2)
+    parser.add_argument('--max-queue-size', help = 'Queue length for multiprocessing workers in fit_generator.', type = int, default = 2)
     
     print(vars(parser.parse_args(args)))
     return parser.parse_args(args)
@@ -115,8 +117,11 @@ def main(args = None):
             model.layers[i].trainable = False
 
     print("\nCompiling Model!\n")
-    model.compile(optimizer=Adam(lr = args.lr, clipnorm = 0.001),
-                loss={'final_layer': grasp_loss_bt(args.batch_size)})
+    model.compile(  
+                    optimizer=Adam(lr = args.lr, clipnorm = 0.001),
+                    loss={'final_layer': grasp_loss_bt(args.batch_size)}
+                    # metric=['grasp_accuracy']
+                 )
 
     # create the callbacks
     callbacks = create_callbacks(
@@ -129,20 +134,21 @@ def main(args = None):
     print("\nStarting Training!\n")
     history = model.fit_generator(
         generator = train_generator,
+        # steps_per_epoch = 2,
         steps_per_epoch = train_generator.batches_per_epoch(),
         initial_epoch = args.start_epoch,
         epochs = args.epochs,
+        # epochs = 1,
         verbose = 1,
         callbacks = callbacks,
         workers = args.workers,
         use_multiprocessing = args.multiprocessing,
         max_queue_size = args.max_queue_size,
-        # validation_data = validation_generator
+        validation_data = validation_generator
     )
-    print(history.history)
     print("\nTraining Complete! Saving...\n")
     os.makedirs(args.snapshot_path, exist_ok = True)
-    model.save(os.path.join(args.snapshot_path, '{dataset_type}_finish.h5'.format(dataset_type = args.dataset_type)))
+    model.save_weights(os.path.join(args.snapshot_path, '{dataset_type}_finish.h5'.format(dataset_type = args.dataset_type)))
     print("\nEnd of Code...\n")
     
 
@@ -163,9 +169,9 @@ def create_generators(args):
     if args.dataset_type == 'cornell':
         dataset = args.cornell_path
         # open output file for reading
-        with open(dataset+'/train_1.txt', 'r') as filehandle:
+        with open(dataset+'/train_0.txt', 'r') as filehandle:
             train_data = json.load(filehandle)
-        with open(dataset+'/valid_1.txt', 'r') as filehandle:
+        with open(dataset+'/valid_0.txt', 'r') as filehandle:
             valid_data = json.load(filehandle)
         
         train_generator = CornellDataset(
@@ -226,27 +232,15 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
             embeddings_freq = 0,
             embeddings_layer_names = None,
             embeddings_metadata = None,
-            profile_batch = '5,10'
+            profile_batch = '25,30'
         )
         callbacks.append(tensorboard_callback)
 
     if args.evaluation and validation_generator:
         from eval.eval_callback import Evaluate
         evaluation = Evaluate(validation_generator, prediction_model, tensorboard = tensorboard_callback)
+        evaluation._supports_tf_logs = True
         callbacks.append(evaluation)
-
-    # save the model
-    if args.snapshots:
-        # ensure directory created first; otherwise h5py will error after epoch.
-        os.makedirs(snapshot_path, exist_ok = True)
-        # checkpoint = keras.callbacks.ModelCheckpoint(os.path.join(snapshot_path, 'phi_{phi}_{dataset_type}_best_{metric}.h5'.format(phi = str(args.phi), metric = metric_to_monitor, dataset_type = args.dataset_type)),
-        checkpoint = keras.callbacks.ModelCheckpoint(os.path.join(snapshot_path, '{dataset_type}_best_{metric}.h5'.format(phi = str(args.phi), metric = metric_to_monitor, dataset_type = args.dataset_type)),
-                                                     verbose = 1,
-                                                     #save_weights_only = True,
-                                                     save_best_only = True,
-                                                     monitor = metric_to_monitor,
-                                                     mode = mode)
-        callbacks.append(checkpoint)
 
     # Learning Rate Schedule
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
@@ -259,6 +253,21 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
         cooldown   = 0,
         min_lr     = 1e-7
     ))
+    
+    # save the model
+    if args.snapshots:
+        # ensure directory created first; otherwise h5py will error after epoch.
+        os.makedirs(snapshot_path, exist_ok = True)
+        # checkpoint = keras.callbacks.ModelCheckpoint(os.path.join(snapshot_path, 'phi_{phi}_{dataset_type}_best_{metric}.h5'.format(phi = str(args.phi), metric = metric_to_monitor, dataset_type = args.dataset_type)),
+        checkpoint = keras.callbacks.ModelCheckpoint(os.path.join(snapshot_path, '{dataset_type}_best_{metric}.h5'.format(phi = str(args.phi), metric = metric_to_monitor, dataset_type = args.dataset_type)),
+                                                     verbose = 1,
+                                                     save_weights_only = True,
+                                                     save_best_only = True,
+                                                     monitor = metric_to_monitor,
+                                                     save_freq='epoch',
+                                                     mode = mode)
+        # checkpoint._supports_tf_logs = False
+        callbacks.append(checkpoint)
 
     return callbacks
 

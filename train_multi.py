@@ -1,3 +1,6 @@
+
+# python train_multi.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
+
 import argparse
 import sys
 import time
@@ -7,12 +10,13 @@ import json
 from dataset_processing.cornell_generator import CornellDataset
 
 import tensorflow as tf
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
-config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-# Optimization after profiling
-os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
+# physical_devices = tf.config.experimental.list_physical_devices('GPU')
+# assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
+# config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+# # Optimization after profiling
+# os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
 
 # Model related
 from model_multi import build_EfficientGrasp_multi
@@ -131,6 +135,33 @@ def main(args = None):
         args,
     )
     
+    # ## TEST ON SINGLE IMAGE
+    # import numpy as np
+    # filename = '/kaggle/input/cornell-preprocessed/Cornell/archive/06/pcd0600r.png'
+    # # from generators.cornell import load_and_preprocess_img
+    # # test_data = load_and_preprocess_img(filename, side_after_crop=None, resize_height=512, resize_width=512)
+    # from dataset_processing import image
+    # from dataset_processing.cornell_generator import CornellDataset
+    # from dataset_processing.grasp import Grasp
+    # test_data = CornellDataset.load_custom_image(filename)
+    # test_data = np.array(test_data)
+    # test_data = test_data[np.newaxis, ...]
+    # print(' ### TEST ###: ', test_data.shape)
+    # model_out = model.predict(test_data, verbose=1, steps=1)
+    # test_out = model_out[0]
+    # # print(len(test_out))
+    # # print(type(test_out[0]))
+    # # print(model.layers['grasp_5'].output)
+    # print(test_out.shape)
+    # # print("Output vector: ", test_out)
+    # output_vectors = []
+    # for i in range(test_out.shape[0]):
+    #     pred_grasp = Grasp(test_out[i][0:2], *test_out[i][2:], unnorm=True)
+    #     output_vectors.append(pred_grasp.as_bbox)
+    # print(output_vectors)
+    # exit()
+
+
     print("\nStarting Training!\n")
     history = model.fit_generator(
         generator = train_generator,

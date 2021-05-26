@@ -121,6 +121,7 @@ class CornellDataset(Sequence):
             # rgd_img.img = rgd_img.img.transpose((2, 0, 1))
         return rgd_img.img
 
+    @staticmethod
     def load_custom_image(filename, output_size=512, normalise=True):
         rgd_img = image.Image.from_file(filename)
         rgd_img.resize((output_size, output_size))
@@ -174,21 +175,6 @@ class CornellDataset(Sequence):
                 for g_id in range(len(gtbb.grs)):
                     # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
                     grasp = (gtbb[g_id].as_grasp).as_list
-                    # # DEBUG
-                    # g1 = gtbb[g_id]
-                    # print('Orig points: ', g1.points)
-                    # g2 = (gtbb[g_id].as_grasp).as_list
-                    # print('Norm grasp', g2)
-                    # g3 = gp.Grasp(g2[0:2], *g2[2:], unnorm=True)
-                    # g4 = g3.as_gr.points
-                    # print('Points after', g4)
-                    # g1.points = g4
-                    # g5 = g1.as_grasp.as_list
-                    # print('Norm grasp again', g5)
-                    # g6 = gp.Grasp(g5[0:2], *g5[2:], unnorm=True)
-                    # print('Points after again', g6.as_gr.points)
-                    # print("===========")
-                    # # DEBUG
                     # Store each grasp for an image
                     y_grasp_image.append(grasp)
                     count -= 1
@@ -196,35 +182,11 @@ class CornellDataset(Sequence):
                         break
                 while (count > 0):
                     pad_0 = [1e8, 1e8, 1e8, 1e8, 1e8, 1e8]
-                    # pad_0 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
                     y_grasp_image.append(pad_0)
                     count -= 1
                 # Store all grasps for an image
                 y_grasp.append(y_grasp_image)
 
-                
-                # # Pick random grasp
-                # g_id = np.random.randint(len(gtbb.grs))
-                # # HARDCODE TO PICK ONLY 1st GRASP
-                # g_id = 0
-                # # Get Grasp as list [x y angle(in rad) h w]
-                # grasp = (gtbb[g_id].as_grasp).as_list 
-
-                # # Store grasp
-                # y_grasp.append(grasp)
-
-                # print(gtbb.grs[0])
-                # print(self.rgd_files[indexes[i]])
-                # print('Bbox count: ', len(gtbb.grs))
-                # print(grasp)
-
-                # # Display all Grasps
-                # import matplotlib.pyplot as plt
-                # fig = plt.figure()
-                # ax = fig.add_axes([0,0,1,1])
-                # ax.imshow(rgd_img)
-                # gtbb.plot(ax, 1)
-                # plt.show()
             else:
                 # If validation data
                 # Load image with 1 zoom and 0 rotation
@@ -234,26 +196,34 @@ class CornellDataset(Sequence):
                 gtbb = self.get_gtbb(indexes[i], 0, 0.875, scale)
                 # Pick all grasps
                 y_grasp_image = []
+                # Pad count
+                count = 30
                 for g_id in range(len(gtbb.grs)):
                     # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
-                    grasp = (gtbb[g_id].as_grasp).as_list 
+                    grasp = (gtbb[g_id].as_grasp).as_list
                     # Store each grasp for an image
                     y_grasp_image.append(grasp)
-
+                    count -= 1
+                    if count == 0:
+                        break
+                while (count > 0):
+                    pad_0 = [1e8, 1e8, 1e8, 1e8, 1e8, 1e8]
+                    y_grasp_image.append(pad_0)
+                    count -= 1
                 # Store all grasps for an image
                 y_grasp.append(y_grasp_image)
+                ## OLD Val START
+                # for g_id in range(len(gtbb.grs)):
+                #     # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
+                #     grasp = (gtbb[g_id].as_grasp).as_list 
+                #     # Store each grasp for an image
+                #     y_grasp_image.append(grasp)
 
-                # print(len(y_grasp))
-                # print(len(y_grasp[0]))
-                # # Display all Grasps
-                # import matplotlib.pyplot as plt
-                # fig = plt.figure()
-                # ax = fig.add_axes([0,0,1,1])
-                # ax.imshow(rgd_img)
-                # gtbb.plot(ax, 1)
-                # plt.show()
+                # # Store all grasps for an image
+                # y_grasp.append(y_grasp_image)
+                ## OLD Val END
                 
-            # Store sample
+            # Store Image sample
             X[i,] = rgd_img
         if not self.run_test:
             yy = np.asarray(y_grasp)
