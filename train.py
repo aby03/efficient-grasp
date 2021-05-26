@@ -1,4 +1,5 @@
 # python train.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
+# python train.py --phi 0 --batch-size 1 --lr 1e-4 --weights imagenet cornell /home/aby/Workspace/Cornell/archive
 
 import argparse
 import sys
@@ -9,12 +10,13 @@ import json
 from dataset_processing.cornell_generator import CornellDataset
 
 import tensorflow as tf
-# physical_devices = tf.config.experimental.list_physical_devices('GPU')
-# assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
-# config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-# # Optimization after profiling
-# os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
+config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+# Optimization after profiling
+os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
 
 # Model related
 from model import build_EfficientGrasp
@@ -135,7 +137,7 @@ def main(args = None):
     history = model.fit_generator(
         generator = train_generator,
         # steps_per_epoch = 2,
-        steps_per_epoch = train_generator.batches_per_epoch(),
+        steps_per_epoch = len(train_generator),
         initial_epoch = args.start_epoch,
         epochs = args.epochs,
         # epochs = 1,
@@ -246,12 +248,12 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
         monitor    = 'loss',
         factor     = 0.5,
-        patience   = 10,
+        patience   = 5,
         verbose    = 1,
         mode       = 'min',
         min_delta  = 0.0001,
         cooldown   = 0,
-        min_lr     = 1e-7
+        min_lr     = 1e-6
     ))
     
     # save the model

@@ -63,19 +63,13 @@ class CornellDataset(Sequence):
             np.random.shuffle(self.indexes)
 
     def __len__(self):
-        """ Size of the dataset.
-        """
-        return len(self.rgd_files)
+        'Denotes the number of batches per epoch'
+        return int(np.floor(len(self.rgd_files) / self.batch_size))
 
     def size(self):
         """ Size of the dataset.
         """
         return len(self.rgd_files)
-
-    def batches_per_epoch(self):
-        'Denotes the number of batches per epoch'
-        return int(np.floor(len(self.rgd_files) / self.batch_size))
-
 
     def _get_crop_attrs(self, idx):
         gtbbs = gp.GraspRectangles.load_from_cornell_file(self.dataset+self.grasp_files[idx])
