@@ -1,4 +1,7 @@
+## Kaggle
 # python train.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
+## Colab
+# python train.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --tensorboard-dir /content/drive/MyDrive/MTP/logs --weights imagenet cornell /content/drive/MyDrive/archive
 
 import argparse
 import sys
@@ -119,7 +122,8 @@ def main(args = None):
     print("\nCompiling Model!\n")
     model.compile(  
                     optimizer=Adam(lr = args.lr, clipnorm = 0.001),
-                    loss={'final_layer': grasp_loss_bt(args.batch_size)}
+                    loss={'final_layer': grasp_loss_bt(args.batch_size)},
+                    run_eagerly=True
                     # metric=['grasp_accuracy']
                  )
 

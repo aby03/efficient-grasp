@@ -336,6 +336,7 @@ class GraspNet(models.Model):
 
     def call(self, inputs, **kwargs):
         feature, level = inputs
+        level = np.array(level)
         for i in range(self.depth):
             feature = self.convs[i](feature)
             # feature = self.bns[i][self.level](feature)
@@ -345,7 +346,8 @@ class GraspNet(models.Model):
         
         for i in range(self.num_iteration_steps):
             iterative_input = self.concat([feature, grasp])
-            delta_grasp = self.iterative_submodel([iterative_input, level], level_py = self.level, iter_step_py = i)
+            # delta_grasp = self.iterative_submodel([iterative_input, level], level_py = self.level, iter_step_py = i)
+            delta_grasp = self.iterative_submodel([iterative_input, level], level_py = level, iter_step_py = i)
             grasp = self.add([grasp, delta_grasp])
         outputs = grasp
         # outputs = self.head(feature)
@@ -397,7 +399,7 @@ class IterativeGraspSubNet(models.Model):
         iter_step_py = kwargs["iter_step_py"]
         for i in range(self.depth):
             feature = self.convs[i](feature)
-            feature = self.norm_layer[iter_step_py][i][level](feature)
+            feature = self.norm_layer[iter_step_py][i][level_py](feature)
             feature = self.activation(feature)
         outputs = self.head(feature)
         
