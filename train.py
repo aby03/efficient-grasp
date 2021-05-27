@@ -1,6 +1,10 @@
 # python train.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
 # python train.py --phi 0 --batch-size 1 --lr 1e-4 --weights imagenet cornell /home/aby/Workspace/Cornell/archive
 
+# Starting training timer
+from datetime import datetime
+start_time = datetime.now()
+
 import argparse
 import sys
 import time
@@ -17,6 +21,10 @@ config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 # Optimization after profiling
 os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
+
+# Precision vs Speed Tradeoff
+policy = tf.keras.mixed_precision.experimental.Policy('mixed_float16')
+tf.keras.mixed_precision.experimental.set_policy(policy) 
 
 # Model related
 from model import build_EfficientGrasp
@@ -148,9 +156,14 @@ def main(args = None):
         max_queue_size = args.max_queue_size,
         validation_data = validation_generator
     )
+
     print("\nTraining Complete! Saving...\n")
     os.makedirs(args.snapshot_path, exist_ok = True)
     model.save_weights(os.path.join(args.snapshot_path, '{dataset_type}_finish.h5'.format(dataset_type = args.dataset_type)))
+    
+    # Calculating Training time
+    end_time = datetime.now()
+    print('Training Duration: {}'.format(end_time - start_time))
     print("\nEnd of Code...\n")
     
 

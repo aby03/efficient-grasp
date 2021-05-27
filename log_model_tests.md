@@ -6,7 +6,7 @@
 "--lr", "1e-4",
 "--epochs", "100",
 Total params: 4,226,285
-Trainable params: 4,186,829
+Trainable params: 591,441 (RECHECK)
 Non-trainable params: 39,456
 Params
     bifpn_widths = (96)
@@ -34,3 +34,21 @@ avg_iou: 0.52
 avg_angle_diff: 7.30
 Best Accuracy: 90.395% at 81 epoch
 Training Time: 2hrs40mins
+Memory Usage:
+Computation Time:
+
+2.
+TESTING PRECISION TIME TRADEOFF
+"--batch-size", "4",
+"--lr", "1e-4",
+"--epochs", "100",
+Total params: 4,020,965
+Trainable params: 386,121
+Non-trainable params: 3,634,844
+Params
+    bifpn_widths = (64, 96)   # 144
+    bifpn_depths = (3, 3)                # 3
+    subnet_depths = (3, 4)               # 4
+    subnet_width = (36, 48)    # 96
+    subnet_iteration_steps = (1, 2)      # 2
+    num_groups_gn = (3, 3)           # 6  #try to get 16 channels per group

@@ -61,6 +61,7 @@ def build_EfficientGrasp(phi,
     reshape_dim = 0     # 64x64 + 32x32 + 16x16 + 8x8 + 4x4
     for i in range(len(fpn_feature_maps)):
         reshape_dim += fpn_feature_maps[i].shape[1]*fpn_feature_maps[i].shape[2]
+    
     # Apply GraspNet
     grasp_regression = [grasp_net([feature, i]) for i, feature in enumerate(fpn_feature_maps)]
     grasp_regression = layers.Concatenate(axis=1, name='regression_con')(grasp_regression)
@@ -93,7 +94,12 @@ def build_EfficientGrasp(phi,
     all_layers = list(set(efficientgrasp_train.layers + efficientgrasp_prediction.layers))
 
     if print_architecture:
+        for i in range(1, [227, 329, 329, 374, 464, 566, 656][0]):
+            efficientgrasp_train.layers[i].trainable = False
         efficientgrasp_train.summary()
+        # effnet_params.summary()
+        # bifpn_params.summary()
+        # gnet_params.summary()
     # Return Model
     return efficientgrasp_train, efficientgrasp_prediction, all_layers
 
@@ -140,7 +146,7 @@ def build_BiFPN_layer(features, num_channels, num_groups_gn, idx_BiFPN_layer, fr
                                    P4_in_1 if idx_BiFPN_layer == 0 else P4_in,
                                    P3_in]
     
-    P7_in, P6_td, P5_td, P4_td, P3_out = top_down_pathway_BiFPN(input_feature_maps_top_down, num_channels, idx_BiFPN_layer)
+    P7_in, P6_td, P5_td, P4_td, P3_out = top_down_pathway_BiFPN(input_feature_maps_top_down, num_channels, idx_BiFPN_layer, num_groups_gn)
     
     #bottom up pathway
     input_feature_maps_bottom_up = [[P3_out],
@@ -149,7 +155,7 @@ def build_BiFPN_layer(features, num_channels, num_groups_gn, idx_BiFPN_layer, fr
                                     [P6_in, P6_td],
                                     [P7_in]]
     
-    P3_out, P4_out, P5_out, P6_out, P7_out = bottom_up_pathway_BiFPN(input_feature_maps_bottom_up, num_channels, idx_BiFPN_layer)
+    P3_out, P4_out, P5_out, P6_out, P7_out = bottom_up_pathway_BiFPN(input_feature_maps_bottom_up, num_channels, idx_BiFPN_layer, num_groups_gn)
     
     
     return P3_out, P4_td, P5_td, P6_td, P7_out #TODO check if it is a bug to return the top down feature maps instead of the output maps
@@ -189,7 +195,7 @@ def prepare_feature_maps_for_BiFPN(C3, C4, C5, num_channels, num_groups_gn, free
     
     return P3_in, P4_in_1, P4_in_2, P5_in_1, P5_in_2, P6_in, P7_in
 
-def top_down_pathway_BiFPN(input_feature_maps_top_down, num_channels, idx_BiFPN_layer):
+def top_down_pathway_BiFPN(input_feature_maps_top_down, num_channels, idx_BiFPN_layer, num_groups_gn=3):
     """
     Computes the top-down-pathway in a single BiFPN layer
     Args:
@@ -209,13 +215,14 @@ def top_down_pathway_BiFPN(input_feature_maps_top_down, num_channels, idx_BiFPN_
                                                     num_channels = num_channels,
                                                     idx_BiFPN_layer = idx_BiFPN_layer,
                                                     node_idx = level - 1,
-                                                    op_idx = 4 + level)
+                                                    op_idx = 4 + level,
+                                                    num_groups_gn=num_groups_gn)
         
         output_top_down_feature_maps.append(merged_feature_map)
         
     return output_top_down_feature_maps
 
-def bottom_up_pathway_BiFPN(input_feature_maps_bottom_up, num_channels, idx_BiFPN_layer):
+def bottom_up_pathway_BiFPN(input_feature_maps_bottom_up, num_channels, idx_BiFPN_layer, num_groups_gn=3):
     """
     Computes the bottom-up-pathway in a single BiFPN layer
     Args:
@@ -235,13 +242,14 @@ def bottom_up_pathway_BiFPN(input_feature_maps_bottom_up, num_channels, idx_BiFP
                                                     num_channels = num_channels,
                                                     idx_BiFPN_layer = idx_BiFPN_layer,
                                                     node_idx = 3 + level,
-                                                    op_idx = 8 + level)
+                                                    op_idx = 8 + level,
+                                                    num_groups_gn=num_groups_gn)
         
         output_bottom_up_feature_maps.append(merged_feature_map)
         
     return output_bottom_up_feature_maps
 
-def single_BiFPN_merge_step(feature_map_other_level, feature_maps_current_level, upsampling, num_channels, idx_BiFPN_layer, node_idx, op_idx):
+def single_BiFPN_merge_step(feature_map_other_level, feature_maps_current_level, upsampling, num_channels, idx_BiFPN_layer, node_idx, op_idx, num_groups_gn=3):
     """
     Merges two feature maps of different levels in the BiFPN
     Args:
@@ -265,11 +273,12 @@ def single_BiFPN_merge_step(feature_map_other_level, feature_maps_current_level,
     merged_feature_map = SeparableConvBlock(num_channels = num_channels,
                                             kernel_size = 3,
                                             strides = 1,
-                                            name = f'fpn_cells/cell_{idx_BiFPN_layer}/fnode{node_idx}/op_after_combine{op_idx}')(merged_feature_map)
+                                            name = f'fpn_cells/cell_{idx_BiFPN_layer}/fnode{node_idx}/op_after_combine{op_idx}',
+                                            num_groups_gn=num_groups_gn)(merged_feature_map)
 
     return merged_feature_map
 
-def SeparableConvBlock(num_channels, kernel_size, strides, name, freeze_bn = False):
+def SeparableConvBlock(num_channels, kernel_size, strides, name, freeze_bn = False, num_groups_gn=3):
     """
     Builds a small block consisting of a depthwise separable convolution layer and a batch norm layer
     Args:
@@ -283,12 +292,12 @@ def SeparableConvBlock(num_channels, kernel_size, strides, name, freeze_bn = Fal
        The depthwise separable convolution block
     """
     f1 = layers.SeparableConv2D(num_channels, kernel_size = kernel_size, strides = strides, padding = 'same', use_bias = True, name = f'{name}/conv')
-    f2 = GroupNormalization(groups=16, axis=-1, epsilon = EPSILON, name = f'{name}/bn')
+    f2 = GroupNormalization(groups=num_groups_gn, axis=-1, epsilon = EPSILON, name = f'{name}/bn')
     # return reduce(lambda f, g: lambda *args, **kwargs: f(*args, **kwargs), (f1, f2))
     return reduce(lambda f, g: lambda *args, **kwargs: g(f(*args, **kwargs)), (f1, f2))
 
 class GraspNet(models.Model):
-    def __init__(self, width, depth, num_iteration_steps, use_group_norm = True, num_groups_gn = 16, num_anchors = 1, freeze_bn = False, **kwargs):
+    def __init__(self, width, depth, num_iteration_steps, use_group_norm = True, num_groups_gn = 3, num_anchors = 1, freeze_bn = False, **kwargs):
         super(GraspNet, self).__init__(**kwargs)
         self.width = width
         self.depth = depth
@@ -354,7 +363,7 @@ class GraspNet(models.Model):
         return outputs
 
 class IterativeGraspSubNet(models.Model):
-    def __init__(self, width, depth, num_values, num_iteration_steps, num_anchors = 1, freeze_bn = False, use_group_norm = True, num_groups_gn = 16, **kwargs):
+    def __init__(self, width, depth, num_values, num_iteration_steps, num_anchors = 1, freeze_bn = False, use_group_norm = True, num_groups_gn = 3, **kwargs):
         super(IterativeGraspSubNet, self).__init__(**kwargs)
         self.width = width
         self.depth = depth
@@ -415,12 +424,12 @@ def get_scaled_parameters(phi):
     #info tuples with scalable parameters
     image_sizes = (512, 640, 768, 896, 1024, 1280, 1408)
 
-    bifpn_widths = (96, 88, 112, 160, 224, 288, 384)   # 144
-    bifpn_depths = (3, 4, 5, 6, 7, 7, 8)                # 3
-    subnet_depths = (4, 3, 3, 4, 4, 4, 5)               # 4
-    subnet_width = (48, 88, 112, 160, 224, 288, 384)    # 96
-    subnet_iteration_steps = (2, 1, 1, 2, 2, 2, 3)      # 2
-    num_groups_gn = (3, 4, 7, 10, 14, 18, 24)           # 6  #try to get 16 channels per group
+    bifpn_widths = (60, 96)   # 144
+    bifpn_depths = (3, 3)                # 3
+    subnet_depths = (3, 4)               # 4
+    subnet_width = (36, 48)    # 96
+    subnet_iteration_steps = (1, 2)      # 2
+    num_groups_gn = (3, 3)           # 6  #try to get 16 channels per group ## width > groups * 16 
 
     # bifpn_widths = (64, 88, 112, 160, 224, 288, 384)
     # bifpn_depths = (3, 4, 5, 6, 7, 7, 8)
@@ -446,4 +455,4 @@ def get_scaled_parameters(phi):
                   "backbone_class": backbones[phi]}    
     return parameters
 
-# build_EfficientGrasp(0, print_architecture=True)
+build_EfficientGrasp(0, print_architecture=True)
