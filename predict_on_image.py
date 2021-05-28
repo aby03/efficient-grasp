@@ -34,14 +34,15 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
                                                         print_architecture=False)
 
 # load pretrained weights
-model.load_weights('checkpoints/2021_05_21_01_20_20/cornell_best_grasp_accuracy.h5', by_name=True)
+# model.load_weights('checkpoints/2021_05_28_03_40_07/cornell_best_grasp_accuracy.h5', by_name=True)
+model.load_weights('checkpoints/2021_05_28_22_24_04/cornell_best_grasp_accuracy.h5', by_name=True)
 print("Weights loaded!")
 
 
 run_multiple = True
 if run_multiple:
     # Load list of images
-    dataset = '/home/aby/Workspace/MTP/Datasets/Cornell/archive'
+    dataset = '/home/aby/Workspace/Cornell/archive'
     with open(dataset+'/test.txt', 'r') as filehandle:
         train_data = json.load(filehandle)
 

@@ -455,4 +455,4 @@ def get_scaled_parameters(phi):
                   "backbone_class": backbones[phi]}    
     return parameters
 
-build_EfficientGrasp(0, print_architecture=True)
+# build_EfficientGrasp(0, print_architecture=True)

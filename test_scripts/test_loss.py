@@ -47,26 +47,27 @@ def grasp_loss_multi(batch_sz = 1):
         y_pred: (batch, 30, 6)
         '''
 
+        SCALE=0.007
+        OFFSET=3.5
+
         [yp_grasps, yp_score] = tf.split(y_pred, [6, 1], axis=2)
 
         yp_grasps = tf.expand_dims(yp_grasps, axis=2)     # (b, 100, 6) -> (b, 100, 1, 6)
-        yp_grasps = tf.repeat(yp_grasps, 30, 2)     # (b, 100, 1, 6) -> (b, 100, 30, 6)
+        yp_grasps = tf.repeat(yp_grasps, tf.shape(y_true)[1], 2)     # (b, 100, 1, 6) -> (b, 100, 30, 6)
+        # yp_grasps = tf.repeat(yp_grasps, 30, 2)     # (b, 100, 1, 6) -> (b, 100, 30, 6)
 
         yp_score = tf.squeeze(yp_score, axis=2)     #(b, 100, 1) -> (b,100)
 
         yt = tf.expand_dims(y_true, axis=1)     # (b, 30, 6) -> (b, 1, 30, 6)
-        yt = tf.repeat(yt, 100, 1)      # (b, 1, 30, 6) -> (b, 100, 30, 6)
+        yt = tf.repeat(yt, tf.shape(y_pred)[1], 1)      # (b, 1, 30, 6) -> (b, 100, 30, 6)
+        # yt = tf.repeat(yt, 100, 1)      # (b, 1, 30, 6) -> (b, 100, 30, 6)
 
         grasp_loss = tf.reduce_min(tf.reduce_mean(tf.square( tf.subtract( yt, yp_grasps ) ), axis=3 ), axis=2)
 
-        SCALE=0.007
-        OFFSET=3.5
         f_grasp_loss = SCALE*grasp_loss-OFFSET
-        f_grasp_loss = tf.clip_by_value(f_grasp_loss, 0, 5)
+        f_grasp_loss = tf.clip_by_value(f_grasp_loss, -7, 7)
         f_grasp_loss = tf.exp(f_grasp_loss)
-        print('f_l_val: ', f_grasp_loss)
-        tf.print(f_grasp_loss)
-        f_grasp_loss = tf.add(1,f_grasp_loss)
+        f_grasp_loss = tf.add(1.0,f_grasp_loss)
         f_grasp_loss = tf.math.reciprocal(f_grasp_loss)
 
         total_loss = tf.add( tf.square( tf.subtract(yp_score, f_grasp_loss) ) ,grasp_loss)
@@ -142,8 +143,10 @@ test_func = grasp_loss_multi(1)
 #     ] 
 # print('X: ', x.shape)
 x = np.zeros([2,30,6])
+x[0,29,:] = float('inf')
 y = np.ones([2,100,7])
 xx = K.variable(x)
+print(xx)
 yy = K.variable(y)
 # print('XX: ', tf.shape(xx[0]))
 F = test_func(K.variable(x), K.variable(y))

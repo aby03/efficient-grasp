@@ -22,9 +22,9 @@ config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 # Optimization after profiling
 os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
 
-# Precision vs Speed Tradeoff
-policy = tf.keras.mixed_precision.experimental.Policy('mixed_float16')
-tf.keras.mixed_precision.experimental.set_policy(policy) 
+# # Precision vs Speed Tradeoff
+# policy = tf.keras.mixed_precision.experimental.Policy('mixed_float16')
+# tf.keras.mixed_precision.experimental.set_policy(policy) 
 
 # Model related
 from model import build_EfficientGrasp

@@ -1,6 +1,6 @@
 ### Single Model
 
-1. 2021_05_27_02_42_08
+1. 2021_05_27_02_41_14   2021_05_27_02_42_08
 
 "--batch-size", "4",
 "--lr", "1e-4",
@@ -37,8 +37,7 @@ Training Time: 2hrs40mins
 Memory Usage:
 Computation Time:
 
-2.
-TESTING PRECISION TIME TRADEOFF
+2. 2021_05_27_06_37_50 (TO RRUN)
 "--batch-size", "4",
 "--lr", "1e-4",
 "--epochs", "100",
@@ -52,3 +51,8 @@ Params
     subnet_width = (36, 48)    # 96
     subnet_iteration_steps = (1, 2)      # 2
     num_groups_gn = (3, 3)           # 6  #try to get 16 channels per group
+
+
+101. 2021_05_28_03_40_07
+Multi model 100 epochs trained
+To train for another 100 epochs

@@ -34,10 +34,12 @@ def _get_detections(generator, model, save_path = None):
 
     # all_detections = [[None for i in range(generator.num_classes()) if generator.has_label(i)] for j in range(generator.size())]
 
+    # List of size of total number of images
     pred_grasps = [None for i in range(generator.size()) ]
     true_grasps = [None for i in range(generator.size()) ]
 
-    for i in tqdm(range(generator.size())):
+    # Run for all images. (DOESNT WORK FOR BATCH SIZE > 1)
+    for i in tqdm(range(len(generator))):
         image_bt, output_bt    = generator[i]
         true_grasp_bt = output_bt
         # raw_image    = generator.load_image(i)
@@ -49,10 +51,12 @@ def _get_detections(generator, model, save_path = None):
 
         # run network
         pred_grasp_bt = model.predict_on_batch(image_bt)
+        # print('........... TEST: ', image_bt.shape, ' V2: ', pred_grasp_bt.shape, ' V3: ', output_bt.shape, ' V4: ', true_grasp_bt.shape)
 
         pred_grasps[i*image_bt.shape[0]:(i+1)*image_bt.shape[0]] = pred_grasp_bt
         true_grasps[i*image_bt.shape[0]:(i+1)*image_bt.shape[0]] = true_grasp_bt
 
+    # print('........... TEST: ', image_bt.shape[0], ' V2: ', len(pred_grasps), ' V3: ', len(true_grasps))
     return pred_grasps, true_grasps
 
         # if save_path is not None:
@@ -164,13 +168,13 @@ def evaluate(
     else:
         '''
             Multigrasp Model
-            pred_grasps: (b, 100, 7)
-            true_grasps: (b, 30, 6)
+            pred_grasps: (all_imgs, 100, 7)
+            true_grasps: (all_imgs, 30, 6)
         '''
         ## Grasp Loss
         loss_v = []
         min_loss_index = []
-        # For each image
+        # For each image in batch
         for i in range(len(pred_grasps)):
             loss_grasp = []
             min_index_grasp = []
@@ -189,8 +193,8 @@ def evaluate(
                 min_index_grasp.append(min_index)
             loss_v.append(loss_grasp)
             min_loss_index.append(min_index_grasp)
-        avg_grasp_loss = sum([sum(los) for los in loss_v]) / len(loss_v)*len(loss_v[0])
-        
+        avg_grasp_loss = sum([sum(los) for los in loss_v]) / (len(loss_v)*len(loss_v[0]))
+
         ## IoU Angle Diff
         correct_grasp_count = 0
         iou_list = []
@@ -198,6 +202,10 @@ def evaluate(
         ### TO DO FROM HERE
         ## For Image
         for i in range(len(pred_grasps)):
+            correct_image_pred = False
+            iou_list_img = []
+            angle_diff_list_img = []
+
             ## For Each Pred Grasp
             for j in range(len(pred_grasps[i])):
                 index = min_loss_index[i][j]
@@ -213,7 +221,7 @@ def evaluate(
                     p1 = Polygon([bbox_true[0], bbox_true[1], bbox_true[2], bbox_true[3], bbox_true[0]])
                     p2 = Polygon([bbox_pred[0], bbox_pred[1], bbox_pred[2], bbox_pred[3], bbox_pred[0]])
                     iou = p1.intersection(p2).area / (p1.area +p2.area -p1.intersection(p2).area)
-                    iou_list.append(iou)
+                    iou_list_img.append(iou)
                 except Exception as e: 
                     print('IoU ERROR', e)
                     print('Bbox pred:', bbox_pred)
@@ -239,14 +247,19 @@ def evaluate(
                 
                 angle_diff = np.abs(pred_angle - true_angle)
                 angle_diff = min(angle_diff, 180.0 - angle_diff)
-                angle_diff_list.append(angle_diff)
+                angle_diff_list_img.append(angle_diff)
                 
                 if angle_diff < 30. and iou >= 0.25:
-                    correct_grasp_count += 1
+                    correct_image_pred = True
                     # print('image: %d | duration = %.2f | count = %d | iou = %.2f | angle_difference = %.2f' %(step, duration, count, iou, angle_diff))
-        grasp_accuracy = correct_grasp_count / len(pred_grasps)*len(pred_grasps[0])
-        avg_iou = sum(iou_list) / len(pred_grasps)*len(pred_grasps[0])
-        avg_angle_diff = sum(angle_diff_list) / len(pred_grasps)*len(pred_grasps[0])
+            iou_list.append(iou_list_img)
+            angle_diff_list.append(angle_diff_list_img)
+            if correct_image_pred:
+                correct_grasp_count += 1
+
+        grasp_accuracy = correct_grasp_count / len(pred_grasps)
+        avg_iou = sum([sum(iou_v) for iou_v in iou_list]) / (len(pred_grasps)*len(pred_grasps[0]))
+        avg_angle_diff = sum([sum(ang_v) for ang_v in angle_diff_list]) / (len(pred_grasps)*len(pred_grasps[0]))
         ### TO DO END HERE
 
     return avg_grasp_loss, grasp_accuracy, avg_iou, avg_angle_diff

@@ -98,12 +98,14 @@ def grasp_loss_multi(batch_sz = 1):
         [yp_grasps, yp_score] = tf.split(y_pred, [6, 1], axis=2)
 
         yp_grasps = tf.expand_dims(yp_grasps, axis=2)     # (b, 100, 6) -> (b, 100, 1, 6)
-        yp_grasps = tf.repeat(yp_grasps, 30, 2)     # (b, 100, 1, 6) -> (b, 100, 30, 6)
+        yp_grasps = tf.repeat(yp_grasps, tf.shape(y_true)[1], 2)     # (b, 100, 1, 6) -> (b, 100, 30, 6)
+        # yp_grasps = tf.repeat(yp_grasps, 30, 2)     # (b, 100, 1, 6) -> (b, 100, 30, 6)
 
         yp_score = tf.squeeze(yp_score, axis=2)     #(b, 100, 1) -> (b,100)
 
         yt = tf.expand_dims(y_true, axis=1)     # (b, 30, 6) -> (b, 1, 30, 6)
-        yt = tf.repeat(yt, 100, 1)      # (b, 1, 30, 6) -> (b, 100, 30, 6)
+        yt = tf.repeat(yt, tf.shape(y_pred)[1], 1)      # (b, 1, 30, 6) -> (b, 100, 30, 6)
+        # yt = tf.repeat(yt, 100, 1)      # (b, 1, 30, 6) -> (b, 100, 30, 6)
 
         grasp_loss = tf.reduce_min(tf.reduce_mean(tf.square( tf.subtract( yt, yp_grasps ) ), axis=3 ), axis=2)
 
