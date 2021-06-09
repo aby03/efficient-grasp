@@ -105,6 +105,58 @@ class GraspRectangles:
                     # Some files contain weird values.
                     continue
         return cls(grs)
+    
+    @classmethod
+    def load_from_amazon_file(cls, fname):
+        """
+        Load grasp rectangles from a Amazon 2017 dataset grasp file.
+        :param fname: Path to text file.
+        :return: GraspRectangles()
+        """
+        NO_OF_GRASPS_TO_PROCESS = 100
+        grs = []
+        jaw_size = 20
+        with open(fname) as f:
+            text = f.read()
+            lines = text.split("\n")
+            counter = 0
+            for line in lines:
+                if line:
+                    counter += 1
+            p_lines = lines
+            if counter > 100:
+                p_lines = []
+                idx = np.round(np.linspace(0, counter - 1, NO_OF_GRASPS_TO_PROCESS, dtype='int')).astype(int)
+                # print('.......TE.....', type(idx))
+                for i in range(0, idx.shape[0]):
+                    p_lines.append( lines[idx[i]] )
+            # while True:
+            for line in p_lines:
+                if not line:
+                    break  # EOF
+                end_coords = line.split()
+                end_coords = [int(coords) for coords in end_coords]
+                x0, y0, x1, y1 = end_coords
+                x_diff = x1-x0
+                y_diff = y1-y0
+                norm_val = (x_diff**2 + y_diff**2)**0.5
+                dir_vec = [y_diff/norm_val, -x_diff/norm_val]
+                p0 = [ int(y0+dir_vec[1]*jaw_size/2), int(x0+dir_vec[0]*jaw_size/2) ]
+                p1 = [ int(y0-dir_vec[1]*jaw_size/2), int(x0-dir_vec[0]*jaw_size/2) ]
+                p2 = [ int(y1-dir_vec[1]*jaw_size/2), int(x1-dir_vec[0]*jaw_size/2) ]
+                p3 = [ int(y1+dir_vec[1]*jaw_size/2), int(x1+dir_vec[0]*jaw_size/2) ]
+                try:
+                    gr = np.array([
+                        p0,
+                        p1,
+                        p2,
+                        p3
+                    ])
+                    grs.append(GraspRectangle(gr))
+                except ValueError:
+                    # Some files contain weird values.
+                    continue
+        return cls(grs)
 
     @classmethod
     def load_from_jacquard_file(cls, fname, scale=1.0):
@@ -373,6 +425,8 @@ class GraspRectangle:
         :param factor: Zoom factor
         :param center: Zoom zenter (focus point, e.g. image center)
         """
+        if (factor == 1.0):
+            return
         T = np.array(
             [
                 [1 / factor, 0],

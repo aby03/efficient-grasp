@@ -8,6 +8,7 @@ import os
 import json
 # Preprocessing
 from dataset_processing.cornell_generator import CornellDataset
+from dataset_processing.amazon_generator import AmazonDataset
 
 import tensorflow as tf
 
@@ -37,6 +38,9 @@ def parse_args(args):
     subparsers.required = True
     cornell_parser = subparsers.add_parser('cornell')
     cornell_parser.add_argument('cornell_path', help = 'Path to dataset directory (ie. Datasets/Cornell/archive/).')
+
+    amazon_parser = subparsers.add_parser('amazon')
+    amazon_parser.add_argument('amazon_path', help = 'Path to dataset directory (ie. Datasets/Cornell/archive/).')
 
     parser.add_argument('--weights', help = 'File containing weights to init the model parameter')
     parser.add_argument('--freeze-backbone', help = 'Freeze training of backbone layers.', action = 'store_true')
@@ -138,13 +142,14 @@ def main(args = None):
     # ## TEST ON SINGLE IMAGE
     # import numpy as np
     # # filename = '/kaggle/input/cornell-preprocessed/Cornell/archive/06/pcd0600r.png'
-    # filename = '/home/aby/Workspace/Cornell/archive/06/pcd0600r.png'
+    # # filename = '/home/aby/Workspace/Cornell/archive/06/pcd0600r.png'
+    # filename = '/home/aby/Workspace/parallel-jaw-grasping-dataset/data/heightmap-color/000000.png'
     # # from generators.cornell import load_and_preprocess_img
     # # test_data = load_and_preprocess_img(filename, side_after_crop=None, resize_height=512, resize_width=512)
     # from dataset_processing import image
     # from dataset_processing.cornell_generator import CornellDataset
     # from dataset_processing.grasp import Grasp
-    # test_data = CornellDataset.load_custom_image(filename)
+    # test_data = CornellDataset.load_custom_image(filename, zoom_fac=1.0)
     # test_data = np.array(test_data)
     # test_data = test_data[np.newaxis, ...]
     # print(' ### TEST ###: ', test_data.shape)
@@ -220,6 +225,31 @@ def create_generators(args):
             batch_size=1,
             phi=args.phi,
         )
+    elif args.dataset_type == 'amazon':
+        dataset = args.amazon_path
+        with open(dataset+'/train-split.txt', 'r') as filehandle:
+            lines = filehandle.readlines()
+            train_data = []
+            for line in lines:
+                train_data.append(line.strip())
+        with open(dataset+'/test-split.txt', 'r') as filehandle:
+            lines = filehandle.readlines()
+            valid_data = []
+            for line in lines:
+                valid_data.append(line.strip())
+        
+        train_generator = AmazonDataset(
+            dataset,
+            train_data,
+            **common_args
+        )
+
+        validation_generator = AmazonDataset(
+            dataset,
+            valid_data,
+            train=False,
+            **common_args
+        )
     else:
         raise ValueError('Invalid data type received: {}'.format(args.dataset_type))
 
@@ -242,7 +272,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
 
     tensorboard_callback = None
     
-    if args.dataset_type == "cornell":
+    if args.dataset_type == "cornell" or args.dataset_type == "amazon":
         snapshot_path = args.snapshot_path
         # save_path = args.validation_image_save_path
         tensorboard_dir = args.tensorboard_dir
@@ -265,8 +295,8 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
             write_images = False,
             embeddings_freq = 0,
             embeddings_layer_names = None,
-            embeddings_metadata = None,
-            profile_batch = '25,30'
+            embeddings_metadata = None#,
+            # profile_batch = '25,30'
         )
         callbacks.append(tensorboard_callback)
 

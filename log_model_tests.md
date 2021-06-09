@@ -37,7 +37,7 @@ Training Time: 2hrs40mins
 Memory Usage:
 Computation Time:
 
-2. 2021_05_27_06_37_50 (TO RRUN)
+2. 2021_06_04_23_13_18
 "--batch-size", "4",
 "--lr", "1e-4",
 "--epochs", "100",
@@ -45,14 +45,46 @@ Total params: 4,020,965
 Trainable params: 386,121
 Non-trainable params: 3,634,844
 Params
-    bifpn_widths = (64, 96)   # 144
+    bifpn_widths = (60, 96)   # 144
     bifpn_depths = (3, 3)                # 3
     subnet_depths = (3, 4)               # 4
     subnet_width = (36, 48)    # 96
     subnet_iteration_steps = (1, 2)      # 2
     num_groups_gn = (3, 3)           # 6  #try to get 16 channels per group
+Training Duration: 2:14:17.621749
+light model
+train_0.txt
+
+3. 2021_06_05_01_37_09
+"--batch-size", "4",
+"--lr", "1e-4",
+"--epochs", "100",
+Total params: 4,020,965
+Trainable params: 386,121
+Non-trainable params: 3,634,844
+Params
+    bifpn_widths = (60, 96)   # 144
+    bifpn_depths = (3, 3)                # 3
+    subnet_depths = (3, 4)               # 4
+    subnet_width = (36, 48)    # 96
+    subnet_iteration_steps = (1, 2)      # 2
+    num_groups_gn = (3, 3)           # 6  #try to get 16 channels per group
+Training Duration: 2:14:17.621749
+light model
+train_1.txt
+Training Duration: 2:15:22.868625
+> Results
+    Acc: Best-85.31%(49 epoch)
+    loss: 68.4413
+    val_grasp_loss: 99.92
+    grasp_accuracy: 0.8136
+    avg_iou: 0.48
+    avg_angle_diff: 8.92
 
 
 101. 2021_05_28_03_40_07
 Multi model 100 epochs trained
 To train for another 100 epochs
+
+102.
+Another 100 epochs trained starting with 1e-5 LR

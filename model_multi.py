@@ -48,8 +48,9 @@ def build_EfficientGrasp_multi(phi,
     grasp_regression = layers.Concatenate(axis=1, name='regression_con')(grasp_regression)
     grasp_regression = layers.Reshape((-1,reshape_dim * output_dim))(grasp_regression) # 5456 for num_anchors=1 && 49104 for 9 
 
-    grasp_regression_multi = layers.Dense(pred_count * output_dim, name='regression_grasp',
-                                        kernel_initializer=tf.keras.initializers.RandomUniform(minval=0., maxval=512.))(grasp_regression)
+    grasp_regression_multi = layers.Dense(pred_count * output_dim, name='regression_grasp'
+                                        , kernel_initializer=tf.keras.initializers.RandomUniform(minval=0., maxval=256.0)
+                                        )(grasp_regression)
     grasp_regression_multi = layers.Reshape((pred_count, output_dim), name='regression_grasp_re')(grasp_regression_multi)
     grasp_regression_score = layers.Dense(pred_count, name='regression_score', activation=tf.keras.activations.sigmoid)(grasp_regression)
     grasp_regression_score = layers.Reshape((pred_count,1), name='regression_score_re')(grasp_regression_score)

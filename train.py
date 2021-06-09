@@ -184,9 +184,9 @@ def create_generators(args):
     if args.dataset_type == 'cornell':
         dataset = args.cornell_path
         # open output file for reading
-        with open(dataset+'/train_0.txt', 'r') as filehandle:
+        with open(dataset+'/train_1.txt', 'r') as filehandle:
             train_data = json.load(filehandle)
-        with open(dataset+'/valid_0.txt', 'r') as filehandle:
+        with open(dataset+'/valid_1.txt', 'r') as filehandle:
             valid_data = json.load(filehandle)
         
         train_generator = CornellDataset(
