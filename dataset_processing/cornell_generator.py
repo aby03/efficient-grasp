@@ -47,6 +47,7 @@ class CornellDataset(Sequence):
         self.n_classes = n_classes
         self.shuffle = shuffle
         self.train = train
+        self.init_shape = None
 
         # List of rgd files of train/valid split
         self.rgd_files = list_IDs
@@ -77,34 +78,54 @@ class CornellDataset(Sequence):
     def _get_crop_attrs(self, idx):
         gtbbs = gp.GraspRectangles.load_from_cornell_file(self.dataset+self.grasp_files[idx])
         center = gtbbs.center
-        left = max(0, min(center[1] - self.output_size // 2, 640 - self.output_size))
-        top = max(0, min(center[0] - self.output_size // 2, 480 - self.output_size))
+        left = max(0, min(center[1] - self.output_size // 2, self.init_shape[0] - self.output_size))
+        top = max(0, min(center[0] - self.output_size // 2, self.init_shape[1] - self.output_size))
         return center, left, top
 
-    def get_gtbb(self, idx, rot=0, zoom=1.0, scale=(1.0,1.0)):
+    def get_gtbb(self, idx, rot=0, zoom=1.0):
         gtbbs = gp.GraspRectangles.load_from_cornell_file(self.dataset+self.grasp_files[idx])
-        center, left, top = self._get_crop_attrs(idx)
-        gtbbs.rotate(rot, center)
+
+        ## Offset to crop to min(height, width)
+        left = max(0, self.init_shape[1] - self.init_shape[0])//2
+        top = max(0, self.init_shape[0] - self.init_shape[1])//2
         gtbbs.offset((-top, -left))
-        gtbbs.zoom(zoom, (self.output_size // 2, self.output_size // 2))
-        gtbbs.corner_scale(scale)
+
+        ## Perform zoom about cropped image center
+        side = min(self.init_shape[0], self.init_shape[1])
+        gtbbs.zoom(zoom, (side // 2, side // 2))
+        
+        ## Side scale points to simulate resizing of image
+        gtbbs.corner_scale( (self.output_size/side, self.output_size/side) )       
+        
+        ## Rotate along final center
+        gtbbs.rotate(rot, (self.output_size//2, self.output_size//2))
+
         return gtbbs
 
     def get_rgd(self, idx, rot=0, zoom=1.0, normalise=True):
         rgd_img = image.Image.from_file(self.dataset+self.rgd_files[idx])
-        center, left, top = self._get_crop_attrs(idx)
-        rgd_img.rotate(rot, center)
-        rgd_img.crop((top, left), (min(480, top + self.output_size), min(640, left + self.output_size)))
+        self.init_shape = rgd_img.img.shape
+
+        ## Perform crop to min(height,width)
+        left = max(0, self.init_shape[1] - self.init_shape[0])//2
+        top = max(0, self.init_shape[0] - self.init_shape[1])//2
+        top_left = (top, left)
+        bottom_right = (self.init_shape[0]-top, self.init_shape[1]-left)
+        rgd_img.crop(top_left, bottom_right)
+
+        ## Perform central zoom
         rgd_img.zoom(zoom)
-        init_shape = (min(480 - top, self.output_size), min(640 - left, self.output_size))
-        final_shape = (self.output_size, self.output_size)
-        # Scale (y,x)
-        scale = (self.output_size/min(480 - top, self.output_size),self.output_size/min(640 - left, self.output_size))
+
+        ## Resizing (Side scaling)
         rgd_img.resize((self.output_size, self.output_size))
+
+        ## Rotate about final center
+        rgd_img.rotate(rot, (self.output_size//2, self.output_size//2))
+
         if normalise:
             rgd_img.normalise()
             # rgd_img.img = rgd_img.img.transpose((2, 0, 1))
-        return rgd_img.img, scale
+        return rgd_img.img#, scale
 
     def get_rgb(self, idx, rot=0, zoom=1.0, normalise=True):
         rgd_img = image.Image.from_file(self.dataset+self.rgd_files[idx].replace('z.png','r.png'))
@@ -162,10 +183,10 @@ class CornellDataset(Sequence):
                     zoom_factor = 0.875
                 
                 # Load image with zoom and rotation
-                rgd_img, scale = self.get_rgd(indexes[i], rot, zoom_factor)
+                rgd_img = self.get_rgd(indexes[i], rot, zoom_factor)
 
                 # Load bboxes
-                gtbb = self.get_gtbb(indexes[i], rot, zoom_factor, scale)
+                gtbb = self.get_gtbb(indexes[i], rot, zoom_factor)
                 # Pick all grasps
                 y_grasp_image = []
                 # Pad count
@@ -190,10 +211,10 @@ class CornellDataset(Sequence):
             else:
                 # If validation data
                 # Load image with 1 zoom and 0 rotation
-                rgd_img, scale = self.get_rgd(indexes[i], 0, 0.875)
+                rgd_img = self.get_rgd(indexes[i], 0, 0.875)
 
                 # Load bboxes
-                gtbb = self.get_gtbb(indexes[i], 0, 0.875, scale)
+                gtbb = self.get_gtbb(indexes[i], 0, 0.875)
                 # Pick all grasps
                 y_grasp_image = []
                 # Pad count
@@ -222,7 +243,15 @@ class CornellDataset(Sequence):
                 # # Store all grasps for an image
                 # y_grasp.append(y_grasp_image)
                 ## OLD Val END
-                
+                        ## Debug start
+            # Display all Grasps
+            import matplotlib.pyplot as plt
+            fig = plt.figure()
+            ax = fig.add_axes([0,0,1,1])
+            ax.imshow(rgd_img)
+            gtbb.plot(ax, 1)
+            plt.show()
+            ## Debug end    
             # Store Image sample
             X[i,] = rgd_img
         if not self.run_test:
@@ -237,18 +266,18 @@ class CornellDataset(Sequence):
 
             return [X, X_rgb], gtbb
 
-# ### TESTING
-# dataset = "/home/aby/Workspace/MTP/Datasets/Cornell/archive"
-# with open(dataset+'/train_1.txt', 'r') as filehandle:
-#     train_data = json.load(filehandle)
+### TESTING
+dataset = "/home/aby/Workspace/Cornell/archive"
+with open(dataset+'/train_1.txt', 'r') as filehandle:
+    train_data = json.load(filehandle)
 
-# train_generator = CornellDataset(
-#     dataset,
-#     train_data,
-#     train=True,
-#     shuffle=False,
-#     batch_size=1
-# )
+train_generator = CornellDataset(
+    dataset,
+    train_data,
+    train=True,
+    shuffle=False,
+    batch_size=1
+)
 
-# for i in range(0, 20):
-#     train_generator[i]
+for i in range(0, 20):
+    train_generator[i]

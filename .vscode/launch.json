@@ -40,7 +40,7 @@
             "args" : ["--phi", "0",
                       "--batch-size", "4",
                       "--lr", "1e-4",
-                      "--epochs", "100",
+                      "--epochs", "200",
                     //   "--no-snapshots",
                       // "--no-evaluation",
                       "--gpu", "0",
@@ -49,7 +49,7 @@
                       // "--start-epoch", "100",
                       "cornell", "/home/aby/Workspace/Cornell/archive",
                       // "amazon", "/home/aby/Workspace/parallel-jaw-grasping-dataset/data",
-                      "|", "tee", "train_console_out_single.txt"]
+                      "|", "tee", "train_console_out.txt"]
         },
         // {
         //     "name": "Python: graspros",

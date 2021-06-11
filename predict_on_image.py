@@ -35,7 +35,7 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 
 # load pretrained weights
 # model.load_weights('checkpoints/2021_05_28_03_40_07/cornell_best_grasp_accuracy.h5', by_name=True)
-model.load_weights('checkpoints/2021_05_28_22_24_04/cornell_best_grasp_accuracy.h5', by_name=True)
+model.load_weights('checkpoints/2021_06_10_03_38_02/cornell_finish.h5', by_name=True)
 print("Weights loaded!")
 
 
@@ -43,7 +43,9 @@ run_multiple = True
 if run_multiple:
     # Load list of images
     dataset = '/home/aby/Workspace/Cornell/archive'
-    with open(dataset+'/test.txt', 'r') as filehandle:
+    # with open(dataset+'/test.txt', 'r') as filehandle:
+    with open(dataset+'/valid_1.txt', 'r') as filehandle:
+    # with open(dataset+'/amazon_test.txt', 'r') as filehandle:
         train_data = json.load(filehandle)
 
     # Visualization on Custom Images
@@ -57,17 +59,28 @@ if run_multiple:
 
         # Remove batch dim
         Y_out = Y_pred[0,:,:]
+
         all_predictions = Y_out[:,0:6]
-        all_score = Y_pred[:,6]
+        all_score = Y_out[:,6]
         
-        print(Y_out)
+        DISPLAY_PRED = 10
+        # Sort y_out based on score
+        sort_index = (-all_score).argsort()
+        print(all_score.shape)
+        print(all_predictions.shape)
+        all_score = all_score[sort_index]
+        all_predictions = all_predictions[sort_index,:]
+
+        print(all_score[:DISPLAY_PRED])
         # Plot all grasps
+        colormap=plt.get_cmap('plasma')
         fig = plt.figure()
         ax = fig.add_axes([0,0,1,1])
         ax.imshow(disp_img)
-        for i in range(all_predictions.shape[0]):
-            plot_grasp = Grasp(all_predictions[i][0:2], *all_predictions[i][2:], unnorm=True)
+        for i in range(min(all_predictions.shape[0], DISPLAY_PRED)):
+            plot_grasp = Grasp(all_predictions[i][0:2], *all_predictions[i][2:], quality=all_score[i], unnorm=True, cmap=colormap)
             plot_grasp.plot(ax, 'red')
+        # plt.colorbar()
         plt.show()
 
 

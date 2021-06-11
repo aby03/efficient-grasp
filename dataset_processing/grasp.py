@@ -406,18 +406,24 @@ class GraspRectangle:
         self.points[:,0] = np.round_(self.points[:,0] * factor[0]).astype(int)
         self.points[:,1] = np.round_(self.points[:,1] * factor[1]).astype(int)
 
-    def plot(self, ax, q=0.0, color='green'):
+    def plot(self, ax, q=0.0, color='green', cmap=None):
         """
         Plot grasping rectangle.
         :param ax: Existing matplotlib axis
         :param q: Grasp quality
         :param color: matplotlib color code (optional)
         """
-        points = np.vstack((self.points, self.points[0]))
-        ax.plot(points[:, 1], points[:, 0], color=color)
-        ax.plot(self.center[1], self.center[0], 'o', color=color, label='_nolegend_')
-        ax.legend(['Red box: Predicted Grasp', 'Green box: Labelled Grasps'])
-        # ax.legend(['score: {0:.2f}'.format(q)])
+        if cmap is not None:
+            points = np.vstack((self.points, self.points[0]))
+            ax.plot(points[:, 1], points[:, 0], color=cmap(q))
+            ax.plot(self.center[1], self.center[0], 'o', color=color, label='_nolegend_')
+            ax.legend(['Colormap: Predicted Grasp', 'Green box: Labelled Grasps'])
+        else:
+            points = np.vstack((self.points, self.points[0]))
+            ax.plot(points[:, 1], points[:, 0], color=color)
+            ax.plot(self.center[1], self.center[0], 'o', color=color, label='_nolegend_')
+            ax.legend(['Red box: Predicted Grasp', 'Green box: Labelled Grasps'])
+            # ax.legend(['score: {0:.2f}'.format(q)])
 
     def zoom(self, factor, center):
         """
@@ -442,7 +448,7 @@ class Grasp:
     A Grasp represented by a center pixel, rotation angle and gripper width (length)
     """
 
-    def __init__(self, center, sin_t, cos_t, length=60, width=30, quality=1, unnorm=False):
+    def __init__(self, center, sin_t, cos_t, length=60, width=30, quality=1, unnorm=False, cmap=None):
         # Unnormalize coords first if values coming from prediction
         if unnorm:
             center, sin_t, cos_t, length, width = self.unnormalize(center, sin_t, cos_t, length, width)
@@ -453,6 +459,7 @@ class Grasp:
         self.quality = quality
         self.length = length
         self.width = width
+        self.cmap = cmap
 
         # Apply sin cos constraint
         if abs(sin_t**2 + cos_t**2 - 1) > 1e-4:
@@ -552,7 +559,7 @@ class Grasp:
         :param ax: Existing matplotlib axis
         :param color: (optional) color
         """
-        self.as_gr.plot(ax, self.quality, color)
+        self.as_gr.plot(ax, self.quality, color, cmap=self.cmap)
 
     def to_jacquard(self, scale=1):
         """

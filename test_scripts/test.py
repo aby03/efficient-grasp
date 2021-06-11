@@ -32,6 +32,32 @@ grs = []
 #         except ValueError:
 #             # Some files contain weird values.
 #             continue
+# import numpy as np
+# arr = np.array([[4, 1], [2, 3], [1, 2], [0, 4]])
+# print(arr)
+# # arr=np.sort(arr, axis=1)
+# sortedArr = arr[(-arr[:,1]).argsort()]
+# print(sortedArr)
+
+import matplotlib.pyplot as plt
 import numpy as np
-idx = np.round(np.linspace(0, 20 - 1, 5)).astype(int)
-print(idx)
+import mpld3
+
+fig, ax = plt.subplots()
+N = 100
+
+scatter = ax.scatter(np.random.normal(size=N),
+                     np.random.normal(size=N),
+                     c=np.random.random(size=N),
+                     s=1000 * np.random.random(size=N),
+                     alpha=0.3,
+                     cmap=plt.cm.jet)
+ax.grid(color='white', linestyle='solid')
+
+ax.set_title("Scatter Plot (with tooltips!)", size=20)
+
+labels = ['point {0}'.format(i + 1) for i in range(N)]
+tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
+mpld3.plugins.connect(fig, tooltip)
+
+mpld3.show()
