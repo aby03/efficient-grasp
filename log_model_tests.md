@@ -86,7 +86,7 @@ Training Duration: 2:15:22.868625
 Multi model 100 epochs trained
 To train for another 100 epochs
 
-102.
+102. 2021_05_28_22_24_04
 Another 100 epochs trained starting with 1e-5 LR
 
 201. 2021_06_05_23_27_08
@@ -98,6 +98,9 @@ Trained for 200 epochs
 Amazon Dataset
 Previous Trained for another 200 epochs (from 201-400 epochs)
 58% accuracy
+
+203. 2021_06_11_06_48_40
+Amazon dataset
 
 301. 2021_06_10_03_38_02
 Cornell Dataset

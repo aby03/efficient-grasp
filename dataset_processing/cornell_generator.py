@@ -244,13 +244,14 @@ class CornellDataset(Sequence):
                 # y_grasp.append(y_grasp_image)
                 ## OLD Val END
                         ## Debug start
-            # Display all Grasps
-            import matplotlib.pyplot as plt
-            fig = plt.figure()
-            ax = fig.add_axes([0,0,1,1])
-            ax.imshow(rgd_img)
-            gtbb.plot(ax, 1)
-            plt.show()
+            ## Debug Start
+            # # Display all Grasps
+            # import matplotlib.pyplot as plt
+            # fig = plt.figure()
+            # ax = fig.add_axes([0,0,1,1])
+            # ax.imshow(rgd_img)
+            # gtbb.plot(ax, 1)
+            # plt.show()
             ## Debug end    
             # Store Image sample
             X[i,] = rgd_img
@@ -266,18 +267,18 @@ class CornellDataset(Sequence):
 
             return [X, X_rgb], gtbb
 
-### TESTING
-dataset = "/home/aby/Workspace/Cornell/archive"
-with open(dataset+'/train_1.txt', 'r') as filehandle:
-    train_data = json.load(filehandle)
+# ### TESTING
+# dataset = "/home/aby/Workspace/Cornell/archive"
+# with open(dataset+'/train_1.txt', 'r') as filehandle:
+#     train_data = json.load(filehandle)
 
-train_generator = CornellDataset(
-    dataset,
-    train_data,
-    train=True,
-    shuffle=False,
-    batch_size=1
-)
+# train_generator = CornellDataset(
+#     dataset,
+#     train_data,
+#     train=True,
+#     shuffle=False,
+#     batch_size=1
+# )
 
-for i in range(0, 20):
-    train_generator[i]
+# for i in range(0, 20):
+#     train_generator[i]

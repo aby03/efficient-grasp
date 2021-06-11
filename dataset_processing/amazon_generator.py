@@ -178,7 +178,7 @@ class AmazonDataset(Sequence):
         indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
 
         # Generate data
-        print(self.rgd_files[indexes[0]])
+        # print(self.rgd_files[indexes[0]])
         X, y_g = self.__data_generation(indexes)
 
         return X, y_g    
@@ -206,8 +206,6 @@ class AmazonDataset(Sequence):
                     zoom_factor = 1.0
                 
                 # Load image with zoom and rotation
-                # rot = 0 ### DEBUG REMOVE LATER
-                rot = np.pi / 2 ### DEBUG REMOVE LATER
                 rgd_img = self.get_rgd(indexes[i], rot, zoom_factor)
 
                 # Load bboxes
@@ -269,13 +267,13 @@ class AmazonDataset(Sequence):
                 # y_grasp.append(y_grasp_image)
                 ## OLD Val END
             ## Debug start
-            # Display all Grasps
-            import matplotlib.pyplot as plt
-            fig = plt.figure()
-            ax = fig.add_axes([0,0,1,1])
-            ax.imshow(rgd_img)
-            gtbb.plot(ax, 1)
-            plt.show()
+            # # Display all Grasps
+            # import matplotlib.pyplot as plt
+            # fig = plt.figure()
+            # ax = fig.add_axes([0,0,1,1])
+            # ax.imshow(rgd_img)
+            # gtbb.plot(ax, 1)
+            # plt.show()
             ## Debug end
             # Store Image sample
             X[i,] = rgd_img
@@ -291,24 +289,24 @@ class AmazonDataset(Sequence):
 
             return [X, X_rgb], gtbb
 
-### TESTING
-dataset = "/home/aby/Workspace/parallel-jaw-grasping-dataset/data"
-with open(dataset+'/test-split.txt', 'r') as filehandle:
-    lines = filehandle.readlines()
-    train_data = []
-    for line in lines:
-        train_data.append(line.strip())
-    # train_data = json.load(filehandle)
+# ### TESTING
+# dataset = "/home/aby/Workspace/parallel-jaw-grasping-dataset/data"
+# with open(dataset+'/test-split.txt', 'r') as filehandle:
+#     lines = filehandle.readlines()
+#     train_data = []
+#     for line in lines:
+#         train_data.append(line.strip())
+#     # train_data = json.load(filehandle)
 
-train_generator = AmazonDataset(
-    dataset,
-    train_data,
-    train=False,
-    shuffle=False,
-    batch_size=1
-)
+# train_generator = AmazonDataset(
+#     dataset,
+#     train_data,
+#     train=False,
+#     shuffle=False,
+#     batch_size=1
+# )
 
-for i in range(0, 20):
-    x, y = train_generator[i]
+# for i in range(0, 20):
+#     x, y = train_generator[i]
     # print(y)
     # break

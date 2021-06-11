@@ -310,11 +310,11 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
         monitor    = 'loss',
         factor     = 0.5,
-        patience   = 10,
+        patience   = 5,
         verbose    = 1,
         mode       = 'min',
         min_delta  = 0.0001,
-        cooldown   = 0,
+        cooldown   = 5,
         min_lr     = 1e-7
     ))
     
