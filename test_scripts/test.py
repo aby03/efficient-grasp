@@ -39,25 +39,39 @@ grs = []
 # sortedArr = arr[(-arr[:,1]).argsort()]
 # print(sortedArr)
 
-import matplotlib.pyplot as plt
-import numpy as np
-import mpld3
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import mpld3
 
-fig, ax = plt.subplots()
-N = 100
+# fig, ax = plt.subplots()
+# N = 100
 
-scatter = ax.scatter(np.random.normal(size=N),
-                     np.random.normal(size=N),
-                     c=np.random.random(size=N),
-                     s=1000 * np.random.random(size=N),
-                     alpha=0.3,
-                     cmap=plt.cm.jet)
-ax.grid(color='white', linestyle='solid')
+# scatter = ax.scatter(np.random.normal(size=N),
+#                      np.random.normal(size=N),
+#                      c=np.random.random(size=N),
+#                      s=1000 * np.random.random(size=N),
+#                      alpha=0.3,
+#                      cmap=plt.cm.jet)
+# ax.grid(color='white', linestyle='solid')
 
-ax.set_title("Scatter Plot (with tooltips!)", size=20)
+# ax.set_title("Scatter Plot (with tooltips!)", size=20)
 
-labels = ['point {0}'.format(i + 1) for i in range(N)]
-tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
-mpld3.plugins.connect(fig, tooltip)
+# labels = ['point {0}'.format(i + 1) for i in range(N)]
+# tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
+# mpld3.plugins.connect(fig, tooltip)
 
-mpld3.show()
+# mpld3.show()
+
+
+import os,sys,inspect
+current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir) 
+from dataset_processing import grasp
+
+gp = grasp.Grasp([10,11], 1, 0, 10, 20, 0.5)
+print(gp.center)
+norm_gp = gp.as_list
+print(norm_gp)
+unnorm_gp = grasp.Grasp(norm_gp[0:2], *norm_gp[2:], unnorm=True)
+print(unnorm_gp.center)

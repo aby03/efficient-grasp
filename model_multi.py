@@ -1,11 +1,54 @@
 from model import *
 
+def get_scaled_parameters_multi(phi):
+    """
+    Get all needed scaled parameters to build EfficientGrasp
+    Args:
+        phi: EfficientGrasp scaling hyperparameter phi
+    
+    Returns:
+       Dictionary containing the scaled parameters
+    """
+    #info tuples with scalable parameters
+    image_sizes = (512, 640, 768, 896, 1024, 1280, 1408)
+
+    bifpn_widths = (144, 60, 96)   # 144
+    bifpn_depths = (3, 3, 3)                # 3
+    subnet_depths = (4, 3, 4)               # 4
+    subnet_width = (96, 36, 48)    # 96
+    subnet_iteration_steps = (2, 1, 2)      # 2
+    num_groups_gn = (6, 3, 3)           # 6  #try to get 16 channels per group ## width > groups * 16 
+
+    # bifpn_widths = (64, 88, 112, 160, 224, 288, 384)
+    # bifpn_depths = (3, 4, 5, 6, 7, 7, 8)
+    # subnet_depths = (3, 3, 3, 4, 4, 4, 5)
+    # subnet_width = (96, 88, 112, 160, 224, 288, 384)
+    # subnet_iteration_steps = (2, 1, 1, 2, 2, 2, 3)
+    # num_groups_gn = (4, 4, 7, 10, 14, 18, 24) #try to get 16 channels per group
+    backbones = (EfficientNetB0,
+                 EfficientNetB1,
+                 EfficientNetB2,
+                 EfficientNetB3,
+                 EfficientNetB4,
+                 EfficientNetB5,
+                 EfficientNetB6)
+    
+    parameters = {"input_size": image_sizes[phi],
+                  "bifpn_width": bifpn_widths[phi],
+                  "bifpn_depth": bifpn_depths[phi],
+                  "subnet_depth": subnet_depths[phi],
+                  "subnet_width": subnet_width[phi],
+                  "subnet_num_iteration_steps": subnet_iteration_steps[phi],
+                  "num_groups_gn": num_groups_gn[phi],
+                  "backbone_class": backbones[phi]}    
+    return parameters
+
 def build_EfficientGrasp_multi(phi,
                         freeze_bn = False,
                         print_architecture = False):
     # Get Parameters for model
     assert phi in range(7)
-    scaled_parameters = get_scaled_parameters(phi)
+    scaled_parameters = get_scaled_parameters_multi(phi)
     
     input_size = scaled_parameters["input_size"]
     input_shape = (input_size, input_size, 3)
@@ -49,7 +92,8 @@ def build_EfficientGrasp_multi(phi,
     grasp_regression = layers.Reshape((-1,reshape_dim * output_dim))(grasp_regression) # 5456 for num_anchors=1 && 49104 for 9 
 
     grasp_regression_multi = layers.Dense(pred_count * output_dim, name='regression_grasp'
-                                        , kernel_initializer=tf.keras.initializers.RandomUniform(minval=0., maxval=256.0)
+                                        # , kernel_initializer=tf.keras.initializers.RandomUniform(minval=0., maxval=256.0)
+                                        , kernel_initializer=tf.keras.initializers.RandomNormal(mean=0., stddev=50.0)
                                         )(grasp_regression)
     grasp_regression_multi = layers.Reshape((pred_count, output_dim), name='regression_grasp_re')(grasp_regression_multi)
     grasp_regression_score = layers.Dense(pred_count, name='regression_score', activation=tf.keras.activations.sigmoid)(grasp_regression)

@@ -4,10 +4,12 @@ from skimage.draw import polygon
 from skimage.feature import peak_local_max
 
 # Normalization constants
-GRASP_MEAN = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-GRASP_STD = [1.0, 1.0, 0.02, 0.02, 1.0, 1.0]
+# GRASP_MEAN = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+# GRASP_STD = [1.0, 1.0, 0.02, 0.02, 1.0, 1.0]
 # GRASP_MEAN = [241.8, 291.3, 0.1664, 0.1093, 27.33, 46.25]
 # GRASP_STD = [26.88,  42.22,   0.7140,  0.6712, 11.29, 21.29]
+GRASP_MEAN = [256.0,   256.0,     0.0,  0.0, 60.0, 40.0]
+GRASP_STD = [20.0,  20.0,     0.2,  0.2, 5.0, 5.0]
 y_std = GRASP_STD[0]
 x_std = GRASP_STD[1]
 sin_std = GRASP_STD[2]
@@ -298,7 +300,7 @@ class GraspRectangle:
         """
         :return: Rectangle center point
         """
-        return self.points.mean(axis=0).astype(np.int)
+        return self.points.mean(axis=0).astype(np.float32)
 
     @property
     def length(self):

@@ -92,8 +92,10 @@ def grasp_loss_multi(batch_sz = 1):
         y_pred: (batch, 100, 7)
         y_true: (batch, 30, 6)
         '''
-        SCALE=0.007
-        SCORE_LOSS_SCALE=1000.0
+        SCALE=1.0
+        ## CHANGE SCALE ACC TO NORMALIZATION
+        # SCORE_LOSS_SCALE=1000.0
+        SCORE_LOSS_SCALE=7.0
         OFFSET=3.5
 
         [yp_grasps, yp_score] = tf.split(y_pred, [6, 1], axis=2)
@@ -118,6 +120,7 @@ def grasp_loss_multi(batch_sz = 1):
 
         total_loss = tf.add( SCORE_LOSS_SCALE*tf.square( tf.subtract(yp_score, f_grasp_loss) ) ,grasp_loss)
         loss = tf.math.reduce_mean(total_loss, axis=1)
+        # loss = tf.math.reduce_mean(grasp_loss, axis=1)
         return loss
     return _grasp_loss_multi
 

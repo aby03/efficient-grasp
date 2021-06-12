@@ -5,6 +5,7 @@ import argparse
 import sys
 import time
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # or any {'0', '1', '2'}
 import json
 # Preprocessing
 from dataset_processing.cornell_generator import CornellDataset
@@ -142,8 +143,8 @@ def main(args = None):
     # ## TEST ON SINGLE IMAGE
     # import numpy as np
     # # filename = '/kaggle/input/cornell-preprocessed/Cornell/archive/06/pcd0600r.png'
-    # # filename = '/home/aby/Workspace/Cornell/archive/06/pcd0600r.png'
-    # filename = '/home/aby/Workspace/parallel-jaw-grasping-dataset/data/heightmap-color/000000.png'
+    # filename = '/home/aby/Workspace/Cornell/archive/07/pcd0754z.png'
+    # # filename = '/home/aby/Workspace/parallel-jaw-grasping-dataset/data/heightmap-color/000000.png'
     # # from generators.cornell import load_and_preprocess_img
     # # test_data = load_and_preprocess_img(filename, side_after_crop=None, resize_height=512, resize_width=512)
     # from dataset_processing import image
@@ -155,6 +156,7 @@ def main(args = None):
     # print(' ### TEST ###: ', test_data.shape)
     # model_out = model.predict(test_data, verbose=1, steps=1)
     # test_out = model_out[0]
+    # Y_out = np.copy(model_out[0])
     # # print(len(test_out))
     # # print(type(test_out[0]))
     # # print(model.layers['grasp_5'].output)
@@ -165,7 +167,50 @@ def main(args = None):
     #     pred_grasp = Grasp(test_out[i][0:2], *test_out[i][2:], unnorm=True)
     #     output_vectors.append(pred_grasp.as_bbox)
     # print(output_vectors)
+    # print('MAX YAHA AYA', max(output_vectors))
+    # # Remove batch dim
+
+    # all_predictions = Y_out[:,0:6]
+    # all_score = Y_out[:,6]
+    
+    # DISPLAY_PRED = 50
+    # # Sort y_out based on score
+    # sort_index = (-all_score).argsort()
+    # all_score = all_score[sort_index]
+    # all_predictions = all_predictions[sort_index,:]
+    # print('SCORE: ', all_score[:DISPLAY_PRED])
+    # import matplotlib
+    # import matplotlib.pyplot as plt
+    # ### Plot all grasps
+    # fig, ax = plt.subplots(1,2)
+    # fig.set_size_inches(10, 5)
+    # ## Show Original Image
+    # ax[0].imshow(test_data[0,:,:,:])
+    # ax[0].set_title('Original Image')
+    # ## Show RGD image and set axis title
+    # ax[1].imshow(test_data[0,:,:,:])
+    # ax[1].set_title('Predicted Grasps')
+    # ## Show Predicted grasps on orig image
+    # colormap=plt.get_cmap('cool')
+    # display_score = all_score[:DISPLAY_PRED]
+    # center_y = []
+    # center_x = []
+    # # col_norm = matplotlib.colors.Normalize(vmin=display_score[-1], vmax=display_score[0], clip=False)
+    # col_norm = matplotlib.colors.Normalize(vmin=min(display_score), vmax=max(display_score), clip=False)
+    # for j in range(min(all_predictions.shape[0], DISPLAY_PRED)):
+    #     plot_grasp = Grasp(all_predictions[j][0:2], *all_predictions[j][2:6], quality=display_score[j], unnorm=True)
+    #     plot_points = plot_grasp.as_gr.points
+    #     print('PLOT POINTS: ', plot_points)
+    #     points = np.vstack((plot_points, plot_points[0]))
+    #     ax[1].plot(points[:, 1], points[:, 0], color=colormap(col_norm(display_score[j])))
+    #     center_y.append(plot_grasp.center[0])
+    #     center_x.append(plot_grasp.center[1])
+    # sc=ax[1].scatter(center_x, center_y, c=display_score, cmap=colormap)
+    # # ax[1][1].scatter(center_x, center_y, c=display_score, cmap=colormap)
+    # plt.colorbar(sc)
+    # plt.show()
     # exit()
+    # ## TEST ON SINGLE IMAGE END
 
 
     print("\nStarting Training!\n")
@@ -207,14 +252,17 @@ def create_generators(args):
     if args.dataset_type == 'cornell':
         dataset = args.cornell_path
         # open output file for reading
+        # with open(dataset+'/train_overfit_2.txt', 'r') as filehandle:
         with open(dataset+'/train_1.txt', 'r') as filehandle:
             train_data = json.load(filehandle)
+        # with open(dataset+'/valid_overfit_2.txt', 'r') as filehandle:
         with open(dataset+'/valid_1.txt', 'r') as filehandle:
             valid_data = json.load(filehandle)
         
         train_generator = CornellDataset(
             dataset,
             train_data,
+            train=False, ## COMMENT IT FOR MAIN TRAINING
             **common_args
         )
 
@@ -289,14 +337,14 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
     if tensorboard_dir:
         tensorboard_callback = keras.callbacks.TensorBoard(
             log_dir = tensorboard_dir,
-            histogram_freq = 1,
-            write_graph = True,
+            # histogram_freq = 1,
+            write_graph = False,
             write_grads = False,
             write_images = False,
-            embeddings_freq = 0,
+            # embeddings_freq = 0,
             embeddings_layer_names = None,
-            embeddings_metadata = None#,
-            # profile_batch = '25,30'
+            embeddings_metadata = None,
+            profile_batch = '25,30'
         )
         callbacks.append(tensorboard_callback)
 
@@ -310,7 +358,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
         monitor    = 'loss',
         factor     = 0.5,
-        patience   = 5,
+        patience   = 10,
         verbose    = 1,
         mode       = 'min',
         min_delta  = 0.0001,

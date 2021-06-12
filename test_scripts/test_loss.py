@@ -142,9 +142,12 @@ test_func = grasp_loss_multi(1)
 #         [0, 0, 0, 0, 0, 0]
 #     ] 
 # print('X: ', x.shape)
-x = np.zeros([2,30,6])
+x = np.zeros([1,30,6])
 x[0,29,:] = float('inf')
-y = np.ones([2,100,7])
+x[0,28,:] = 0.5
+x[0,14,:] = 0.25
+x[0,8,:] = 0.75
+y = np.ones([1,1,7])
 xx = K.variable(x)
 print(xx)
 yy = K.variable(y)

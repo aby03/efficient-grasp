@@ -109,3 +109,12 @@ Best accuracy model 97% is of unstable values(DONT USE)
 Pick Final model
 Loss oscillation stabilized after LR reduced to 3e-6
 Final accuracy: 90.4
+
+302.
+Multi model
+Normalization modified <-> Score Loss Scale Modified
+Weight initialization modified
+Subnet width/depth modified
+
+WEIGHTS NORMALIZATION STDDEV INCREASE --> MORE SPREAD OF DATA
+INPUT NORMALIZAION STDDEV INCREASE --> MORE SPREAD OF DATA

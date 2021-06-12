@@ -251,7 +251,7 @@ class AmazonDataset(Sequence):
                     if count == 0:
                         break
                 while (count > 0):
-                    pad_0 = [1e16, 1e16, 1e16, 1e16, 1e16, 1e16]
+                    pad_0 = [1e8, 1e8, 1e8, 1e8, 1e8, 1e8]
                     y_grasp_image.append(pad_0)
                     count -= 1
                 # Store all grasps for an image

@@ -140,7 +140,7 @@ class CornellDataset(Sequence):
         return rgd_img.img
 
     @staticmethod
-    def load_custom_image(filename, zoom_fac=0.75, output_size=512, normalise=True):
+    def load_custom_image(filename, zoom_fac=1.0, output_size=512, normalise=True):
         rgd_img = image.Image.from_file(filename)
         rgd_img.resize((output_size, output_size))
         if zoom_fac != 1.0:
