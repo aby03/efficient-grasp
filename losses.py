@@ -92,7 +92,7 @@ def grasp_loss_multi(batch_sz = 1):
         y_pred: (batch, 100, 7)
         y_true: (batch, 30, 6)
         '''
-        SCALE=1.0
+        SCALE=5.0
         ## CHANGE SCALE ACC TO NORMALIZATION
         # SCORE_LOSS_SCALE=1000.0
         SCORE_LOSS_SCALE=7.0

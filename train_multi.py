@@ -262,7 +262,7 @@ def create_generators(args):
         train_generator = CornellDataset(
             dataset,
             train_data,
-            train=False, ## COMMENT IT FOR MAIN TRAINING
+            # train=False, ## COMMENT IT FOR MAIN TRAINING
             **common_args
         )
 
@@ -343,8 +343,8 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
             write_images = False,
             # embeddings_freq = 0,
             embeddings_layer_names = None,
-            embeddings_metadata = None,
-            profile_batch = '25,30'
+            embeddings_metadata = None#,
+            # profile_batch = '25,30'
         )
         callbacks.append(tensorboard_callback)
 
