@@ -9,7 +9,7 @@ from skimage.feature import peak_local_max
 # GRASP_MEAN = [241.8, 291.3, 0.1664, 0.1093, 27.33, 46.25]
 # GRASP_STD = [26.88,  42.22,   0.7140,  0.6712, 11.29, 21.29]
 GRASP_MEAN = [256.0,   256.0,     0.0,  0.0, 60.0, 40.0]
-GRASP_STD = [20.0,  20.0,     0.2,  0.2, 5.0, 5.0]
+GRASP_STD = [10.0,  10.0,     0.2,  0.2, 5.0, 5.0]
 y_std = GRASP_STD[0]
 x_std = GRASP_STD[1]
 sin_std = GRASP_STD[2]

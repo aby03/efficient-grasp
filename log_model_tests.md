@@ -110,7 +110,7 @@ Pick Final model
 Loss oscillation stabilized after LR reduced to 3e-6
 Final accuracy: 90.4
 
-302.
+302. 2021_06_12_16_37_53
 Multi model
 Normalization modified <-> Score Loss Scale Modified
 Weight initialization modified
@@ -118,3 +118,4 @@ Subnet width/depth modified
 
 WEIGHTS NORMALIZATION STDDEV INCREASE --> MORE SPREAD OF DATA
 INPUT NORMALIZAION STDDEV INCREASE --> MORE SPREAD OF DATA
+

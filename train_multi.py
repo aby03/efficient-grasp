@@ -5,13 +5,15 @@ import argparse
 import sys
 import time
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # or any {'0', '1', '2'}
 import json
 # Preprocessing
 from dataset_processing.cornell_generator import CornellDataset
 from dataset_processing.amazon_generator import AmazonDataset
 
 import tensorflow as tf
+## To supress console output
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # or any {'0', '1', '2'}
 
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 assert len(physical_devices) > 0, "Not enough GPU hardware devices available"

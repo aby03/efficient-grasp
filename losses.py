@@ -95,7 +95,7 @@ def grasp_loss_multi(batch_sz = 1):
         SCALE=5.0
         ## CHANGE SCALE ACC TO NORMALIZATION
         # SCORE_LOSS_SCALE=1000.0
-        SCORE_LOSS_SCALE=7.0
+        SCORE_LOSS_SCALE=5.0
         OFFSET=3.5
 
         [yp_grasps, yp_score] = tf.split(y_pred, [6, 1], axis=2)

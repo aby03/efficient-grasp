@@ -46,7 +46,7 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 # model.load_weights('checkpoints/2021_06_07_03_48_48/amazon_finish.h5', by_name=True) ##202
 # model.load_weights('checkpoints/2021_06_11_06_48_40/amazon_finish.h5', by_name=True) ##203 (no useful results)
 # model.load_weights('checkpoints/2021_06_10_03_38_02/cornell_finish.h5', by_name=True) ##301 
-model.load_weights('checkpoints/2021_06_12_05_30_13/cornell_finish.h5', by_name=True) ##TEST
+model.load_weights('checkpoints/2021_06_12_16_37_53/cornell_finish.h5', by_name=True) ##TEST
 print("Weights loaded!")
 
 dataset_name = "cornell"
@@ -57,8 +57,8 @@ if run_dataset:
     if dataset_name == "cornell":
         # Load list of images
         dataset = '/home/aby/Workspace/Cornell/archive'
-        with open(dataset+'/train_overfit_2.txt', 'r') as filehandle:
-        # with open(dataset+'/valid_1.txt', 'r') as filehandle:
+        # with open(dataset+'/train_overfit_2.txt', 'r') as filehandle:
+        with open(dataset+'/valid_1.txt', 'r') as filehandle:
         # with open(dataset+'/amazon_test.txt', 'r') as filehandle: ## To check Cornell trained model on amazon images
             train_data = json.load(filehandle)
         
@@ -117,7 +117,7 @@ if run_dataset:
         all_predictions = Y_out[:,0:6]
         all_score = Y_out[:,6]
         
-        DISPLAY_PRED = 10
+        DISPLAY_PRED = 100
         # Sort y_out based on score
         sort_index = (-all_score).argsort()
         all_score = all_score[sort_index]
