@@ -46,11 +46,12 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 # model.load_weights('checkpoints/2021_06_07_03_48_48/amazon_finish.h5', by_name=True) ##202
 # model.load_weights('checkpoints/2021_06_11_06_48_40/amazon_finish.h5', by_name=True) ##203 (no useful results)
 # model.load_weights('checkpoints/2021_06_10_03_38_02/cornell_finish.h5', by_name=True) ##301 
-model.load_weights('checkpoints/2021_06_12_16_37_53/cornell_finish.h5', by_name=True) ##TEST
+# model.load_weights('checkpoints/2021_06_12_16_37_53/cornell_finish.h5', by_name=True) ##TEST
+model.load_weights('checkpoints/2021_06_18_23_33_39/cornell_finish.h5', by_name=True) ##TEST
 print("Weights loaded!")
 
 dataset_name = "cornell"
-run_dataset = True
+run_dataset = False
 SAVE_FIGURE = True
 
 if run_dataset:
@@ -173,7 +174,7 @@ else:
     ## TEST ON NON LABELLED IMAGES
     # Load list of images
     dataset = '/home/aby/Workspace/Cornell/archive'
-    with open(dataset+'/amazon_test.txt', 'r') as filehandle: ## To check trained model on unlabelled unprocessed amazon images
+    with open(dataset+'/test.txt', 'r') as filehandle: ## To check trained model on unlabelled unprocessed amazon images
         train_data = json.load(filehandle)
     # Load Image
     for i in range(len(train_data)):

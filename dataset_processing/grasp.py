@@ -109,6 +109,52 @@ class GraspRectangles:
         return cls(grs)
     
     @classmethod
+    def load_from_vmrd_file(cls, fname):
+        """
+        Load grasp rectangles from a Cornell dataset grasp file.
+        :param fname: Path to text file.
+        :return: GraspRectangles()
+        """
+        grs = []
+        with open(fname) as f:
+            text = f.read()
+            lines = text.split("\n")
+            counter = 0
+            for line in lines:
+            #     if line:
+            #         counter += 1
+            # p_lines = lines
+            # if counter > 100:
+            #     p_lines = []
+            #     idx = np.round(np.linspace(0, counter - 1, NO_OF_GRASPS_TO_PROCESS, dtype='int')).astype(int)
+            #     # print('.......TE.....', type(idx))
+            #     for i in range(0, idx.shape[0]):
+            #         p_lines.append( lines[idx[i]] )
+            # # while True:
+            # for line in p_lines:
+                if not line:
+                    break  # EOF
+                box_coords = line.split()
+                box_coords = [float(coords) for coords in box_coords[:-2]]
+                x0, y0, x1, y1, x2, y2, x3, y3 = box_coords
+                p0 = [ y0, x0 ]
+                p1 = [ y1, x1 ]
+                p2 = [ y2, x2 ]
+                p3 = [ y3, x3 ]
+                try:
+                    gr = np.array([
+                        p0,
+                        p1,
+                        p2,
+                        p3
+                    ])
+                    grs.append(GraspRectangle(gr))
+                except ValueError:
+                    # Some files contain weird values.
+                    continue
+        return cls(grs)
+
+    @classmethod
     def load_from_amazon_file(cls, fname):
         """
         Load grasp rectangles from a Amazon 2017 dataset grasp file.

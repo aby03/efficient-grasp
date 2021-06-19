@@ -13,7 +13,7 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 #Debug
 import json
 
-class CornellDataset(Sequence):
+class VMRDDataset(Sequence):
     """
     Dataset wrapper for the Cornell dataset.
     """
@@ -33,7 +33,7 @@ class CornellDataset(Sequence):
         """
         self.run_test = run_test
         self.random_rotate = True   # Used only when train is enabled for data aug
-        self.random_zoom = True     # Used only when train is enabled for data aug
+        self.random_zoom = False     # Used only when train is enabled for data aug
 
         # Generator
         self.output_size = output_size
@@ -50,9 +50,9 @@ class CornellDataset(Sequence):
         self.init_shape = None
 
         # List of rgd files of train/valid split
-        self.rgd_files = list_IDs
+        self.rgd_files = [self.dataset+"/JPEGImages/"+fid+".jpg" for fid in list_IDs]
         # List of grasp files
-        self.grasp_files = [f.replace('z.png', 'cpos.txt') for f in self.rgd_files]
+        self.grasp_files = [self.dataset+"/Grasps/"+fid+".txt" for fid in list_IDs]
 
         # FOR RGB IMAGE
         # self.rgd_files = [f.replace('z.png', 'r.png') for f in self.rgd_files]
@@ -79,26 +79,28 @@ class CornellDataset(Sequence):
         return len(self.rgd_files)
 
     def _get_crop_attrs(self, idx):
-        gtbbs = gp.GraspRectangles.load_from_cornell_file(self.dataset+self.grasp_files[idx])
+        gtbbs = gp.GraspRectangles.load_from_vmrd_file(self.grasp_files[idx])
         center = gtbbs.center
         left = max(0, min(center[1] - self.output_size // 2, self.init_shape[0] - self.output_size))
         top = max(0, min(center[0] - self.output_size // 2, self.init_shape[1] - self.output_size))
         return center, left, top
 
     def get_gtbb(self, idx, rot=0, zoom=1.0):
-        gtbbs = gp.GraspRectangles.load_from_cornell_file(self.dataset+self.grasp_files[idx])
+        gtbbs = gp.GraspRectangles.load_from_vmrd_file(self.grasp_files[idx])
 
-        ## Offset to crop to min(height, width)
-        left = max(0, self.init_shape[1] - self.init_shape[0])//2
-        top = max(0, self.init_shape[0] - self.init_shape[1])//2
-        gtbbs.offset((-top, -left))
+        # ## Offset to crop to min(height, width)
+        # left = max(0, self.init_shape[1] - self.init_shape[0])//2
+        # top = max(0, self.init_shape[0] - self.init_shape[1])//2
+        # gtbbs.offset((-top, -left))
 
         ## Perform zoom about cropped image center
-        side = min(self.init_shape[0], self.init_shape[1])
-        gtbbs.zoom(zoom, (side // 2, side // 2))
+        # side = min(self.init_shape[0], self.init_shape[1])
+
+        # Perform zoom about center
+        gtbbs.zoom(zoom, (self.init_shape[0] // 2, self.init_shape[1] // 2))
         
         ## Side scale points to simulate resizing of image
-        gtbbs.corner_scale( (self.output_size/side, self.output_size/side) )       
+        gtbbs.corner_scale( (self.output_size/self.init_shape[0], self.output_size/self.init_shape[1]) )       
         
         ## Rotate along final center
         gtbbs.rotate(rot, (self.output_size//2, self.output_size//2))
@@ -106,15 +108,15 @@ class CornellDataset(Sequence):
         return gtbbs
 
     def get_rgd(self, idx, rot=0, zoom=1.0, normalise=True):
-        rgd_img = image.Image.from_file(self.dataset+self.rgd_files[idx])
+        rgd_img = image.Image.from_file(self.rgd_files[idx])
         self.init_shape = rgd_img.img.shape
 
         ## Perform crop to min(height,width)
-        left = max(0, self.init_shape[1] - self.init_shape[0])//2
-        top = max(0, self.init_shape[0] - self.init_shape[1])//2
-        top_left = (top, left)
-        bottom_right = (self.init_shape[0]-top, self.init_shape[1]-left)
-        rgd_img.crop(top_left, bottom_right)
+        # left = max(0, self.init_shape[1] - self.init_shape[0])//2
+        # top = max(0, self.init_shape[0] - self.init_shape[1])//2
+        # top_left = (top, left)
+        # bottom_right = (self.init_shape[0]-top, self.init_shape[1]-left)
+        # rgd_img.crop(top_left, bottom_right)
 
         ## Perform central zoom
         rgd_img.zoom(zoom)
@@ -193,7 +195,7 @@ class CornellDataset(Sequence):
                 # Pick all grasps
                 y_grasp_image = []
                 # Pad count
-                count = 30
+                count = 100
                 for g_id in range(len(gtbb.grs)):
                     # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
                     grasp = (gtbb[g_id].as_grasp).as_list
@@ -214,14 +216,14 @@ class CornellDataset(Sequence):
             else:
                 # If validation data
                 # Load image with 1 zoom and 0 rotation
-                rgd_img = self.get_rgd(indexes[i], 0, 0.875)
+                rgd_img = self.get_rgd(indexes[i], 0, 1)
 
                 # Load bboxes
-                gtbb = self.get_gtbb(indexes[i], 0, 0.875)
+                gtbb = self.get_gtbb(indexes[i], 0, 1)
                 # Pick all grasps
                 y_grasp_image = []
                 # Pad count
-                count = 30
+                count = 100
                 for g_id in range(len(gtbb.grs)):
                     # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
                     grasp = (gtbb[g_id].as_grasp).as_list
@@ -271,11 +273,14 @@ class CornellDataset(Sequence):
             return [X, X_rgb], gtbb
 
 # ### TESTING
-# dataset = "/home/aby/Workspace/Cornell/archive"
-# with open(dataset+'/train_1.txt', 'r') as filehandle:
-#     train_data = json.load(filehandle)
+# dataset = "/home/aby/Workspace/vmrd-v2"
+# with open(dataset+'/ImageSets/Main/test.txt', 'r') as filehandle:
+#     Lines = filehandle.readlines()
+#     train_data = []
+#     for line in Lines:
+#         train_data.append(line.strip())
 
-# train_generator = CornellDataset(
+# train_generator = VMRDDataset(
 #     dataset,
 #     train_data,
 #     train=True,

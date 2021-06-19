@@ -123,3 +123,13 @@ INPUT NORMALIZAION STDDEV INCREASE --> MORE SPREAD OF DATA
 Multi model, Cornell
 Only grasp loss, no score loss
 multi model params modified
+
+
+# A Series:
+RGB Images
+bifpn_widths = (144, 60, 96)   # 144
+bifpn_depths = (3, 3, 3)                # 3
+subnet_depths = (3, 3, 4)               # 4
+subnet_width = (96, 36, 48)    # 96
+subnet_iteration_steps = (2, 1, 2)      # 2
+num_groups_gn = (6, 3, 3)           # 6  #try to get 16 channels per group ## width > groups * 16 

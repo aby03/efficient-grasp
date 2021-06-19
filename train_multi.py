@@ -9,6 +9,7 @@ import json
 # Preprocessing
 from dataset_processing.cornell_generator import CornellDataset
 from dataset_processing.amazon_generator import AmazonDataset
+from dataset_processing.vmrd_generator import VMRDDataset
 
 import tensorflow as tf
 ## To supress console output
@@ -44,6 +45,9 @@ def parse_args(args):
 
     amazon_parser = subparsers.add_parser('amazon')
     amazon_parser.add_argument('amazon_path', help = 'Path to dataset directory (ie. Datasets/Cornell/archive/).')
+
+    vmrd_parser = subparsers.add_parser('vmrd')
+    vmrd_parser.add_argument('vmrd_path', help = 'Path to dataset directory (ie. Datasets/Cornell/archive/).')
 
     parser.add_argument('--weights', help = 'File containing weights to init the model parameter')
     parser.add_argument('--freeze-backbone', help = 'Freeze training of backbone layers.', action = 'store_true')
@@ -227,8 +231,8 @@ def main(args = None):
         callbacks = callbacks,
         workers = args.workers,
         use_multiprocessing = args.multiprocessing,
-        max_queue_size = args.max_queue_size,
-        validation_data = validation_generator
+        max_queue_size = args.max_queue_size#,
+        # validation_data = validation_generator
     )
     print("\nTraining Complete! Saving...\n")
     os.makedirs(args.snapshot_path, exist_ok = True)
@@ -287,14 +291,28 @@ def create_generators(args):
             valid_data = []
             for line in lines:
                 valid_data.append(line.strip())
-        
-        train_generator = AmazonDataset(
+    elif args.dataset_type == 'vmrd':
+        dataset = args.vmrd_path
+        with open(dataset+'/ImageSets/Main/trainval.txt', 'r') as filehandle:
+            lines = filehandle.readlines()
+            data = []
+            for line in lines:
+                data.append(line.strip())
+        train_data = []
+        valid_data = []
+        for i in range(len(data)):
+            if not i%10 == 0:
+                train_data.append(data[i])
+            else:
+                valid_data.append(data[i])
+
+        train_generator = VMRDDataset(
             dataset,
             train_data,
             **common_args
         )
 
-        validation_generator = AmazonDataset(
+        validation_generator = VMRDDataset(
             dataset,
             valid_data,
             train=False,
@@ -322,7 +340,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
 
     tensorboard_callback = None
     
-    if args.dataset_type == "cornell" or args.dataset_type == "amazon":
+    if args.dataset_type == "cornell" or args.dataset_type == "amazon" or args.dataset_type == "vmrd":
         snapshot_path = args.snapshot_path
         # save_path = args.validation_image_save_path
         tensorboard_dir = args.tensorboard_dir
@@ -360,7 +378,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
         monitor    = 'loss',
         factor     = 0.5,
-        patience   = 10,
+        patience   = 5,
         verbose    = 1,
         mode       = 'min',
         min_delta  = 0.0001,
