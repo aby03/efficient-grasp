@@ -14,7 +14,7 @@ def get_scaled_parameters_multi(phi):
 
     bifpn_widths = (144, 60, 96)   # 144
     bifpn_depths = (3, 3, 3)                # 3
-    subnet_depths = (4, 3, 4)               # 4
+    subnet_depths = (3, 3, 4)               # 4
     subnet_width = (96, 36, 48)    # 96
     subnet_iteration_steps = (2, 1, 2)      # 2
     num_groups_gn = (6, 3, 3)           # 6  #try to get 16 channels per group ## width > groups * 16 

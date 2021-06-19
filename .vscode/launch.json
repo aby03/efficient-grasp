@@ -38,7 +38,7 @@
             "program": "${file}",
             "python": "/home/aby/miniconda3/envs/efficient-grasp/bin/python",
             "args" : ["--phi", "0",
-                      "--batch-size", "4",
+                      "--batch-size", "2",
                       "--lr", "1e-4",
                       "--epochs", "200",
                       // "--no-snapshots",

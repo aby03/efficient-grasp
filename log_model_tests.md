@@ -119,3 +119,7 @@ Subnet width/depth modified
 WEIGHTS NORMALIZATION STDDEV INCREASE --> MORE SPREAD OF DATA
 INPUT NORMALIZAION STDDEV INCREASE --> MORE SPREAD OF DATA
 
+303. 2021_06_18_23_33_39
+Multi model, Cornell
+Only grasp loss, no score loss
+multi model params modified
