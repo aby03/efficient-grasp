@@ -22,10 +22,10 @@ import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # or any {'0', '1', '2'}
 
-# physical_devices = tf.config.experimental.list_physical_devices('GPU')
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
 # tf.config.experimental.set_virtual_device_configuration(physical_devices[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2048)])
-# assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
-# config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
+assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
+config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 
 # Optimization after profiling
@@ -193,9 +193,9 @@ def create_generators(args):
     if args.dataset_type == 'cornell':
         dataset = args.cornell_path
         # open output file for reading
-        with open(dataset+'/train_0.txt', 'r') as filehandle:
+        with open(dataset+'/train_1.txt', 'r') as filehandle:
             train_data = json.load(filehandle)
-        with open(dataset+'/valid_0.txt', 'r') as filehandle:
+        with open(dataset+'/valid_1.txt', 'r') as filehandle:
             valid_data = json.load(filehandle)
         
         train_generator = CornellDataset(
