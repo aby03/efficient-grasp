@@ -17,6 +17,10 @@ EfficientGrasp model based on EfficientPose and EfficientDet to identify robotic
 
 4. (Alternate) Unpack conda environment following this: https://www.anaconda.com/blog/moving-conda-environments
 
+### Anchors
+1. To compile compute_overlap 
+> python setup.py build_ext --inplace
+
 ## Run Training
 
 1. VSCode
