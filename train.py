@@ -153,8 +153,8 @@ def main(args = None):
     print("\nStarting Training!\n")
     history = model.fit_generator(
         generator = train_generator,
-        steps_per_epoch = 2,
-        # steps_per_epoch = len(train_generator),
+        # steps_per_epoch = 2,
+        steps_per_epoch = len(train_generator),
         initial_epoch = args.start_epoch,
         epochs = args.epochs,
         # epochs = 1,
