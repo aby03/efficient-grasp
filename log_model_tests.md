@@ -124,6 +124,13 @@ Multi model, Cornell
 Only grasp loss, no score loss
 multi model params modified
 
+VMRD
+val_grasp_loss: 5.23
+grasp_accuracy: 0.8349
+avg_iou: 0.01
+avg_angle_diff: 14.14
+Epoch 00087: grasp_accuracy improved from 0.82783 to 0.83491, saving model to checkpoints/2021_06_19_20_54_16/vmrd_best_grasp_accuracy.h5
+Epoch 88/200
 
 # A Series:
 RGD Images

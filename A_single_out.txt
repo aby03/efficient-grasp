@@ -1,0 +1,15 @@
+{'dataset_type': 'cornell', 'weights': 'imagenet', 'freeze_backbone': False, 'batch_size': 1, 'lr': 0.0001, 'phi': 0, 'gpu': '0', 'epochs': 200, 'start_epoch': 0, 'steps': 1790, 'snapshot_path': 'checkpoints/2021_06_20_14_40_55', 'tensorboard_dir': 'logs/2021_06_20_14_40_55', 'snapshots': True, 'evaluation': True, 'multiprocessing': False, 'workers': 2, 'max_queue_size': 2, 'cornell_path': '/home/aby/Workspace/Cornell/archive'}
+
+Creating the Generators...
+
+Done!
+
+Building Model!
+
+
+Compiling Model!
+
+
+Starting Training!
+
+Epoch 1/200

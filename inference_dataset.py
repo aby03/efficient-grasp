@@ -47,7 +47,7 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 # model.load_weights('checkpoints/2021_06_11_06_48_40/amazon_finish.h5', by_name=True) ##203 (no useful results)
 # model.load_weights('checkpoints/2021_06_10_03_38_02/cornell_finish.h5', by_name=True) ##301 
 # model.load_weights('checkpoints/2021_06_12_16_37_53/cornell_finish.h5', by_name=True) ##TEST
-model.load_weights('checkpoints/2021_06_18_23_33_39/cornell_finish.h5', by_name=True) ##TEST
+model.load_weights('checkpoints/2021_06_19_20_54_16/vmrd_best_grasp_accuracy.h5', by_name=True) ##TEST
 print("Weights loaded!")
 
 dataset_name = "cornell"
