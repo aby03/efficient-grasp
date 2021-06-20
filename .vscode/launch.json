@@ -102,7 +102,7 @@
             "program": "${file}",
             "python": "python",
             "args" : ["--phi", "0",
-                      "--batch-size", "1",
+                      "--batch-size", "4",
                       "--lr", "1e-4",
                       "--epochs", "150",
                     //   "--no-snapshots",

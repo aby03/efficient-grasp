@@ -1,5 +1,9 @@
+## Kaggle
 # python train.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
-# python train.py --phi 0 --batch-size 1 --lr 1e-4 --weights imagenet cornell /home/aby/Workspace/Cornell/archive
+# python train.py --phi 0 --batch-size 2 --lr 1e-4 --epochs 200 --snapshot-path /kaggle/working/efficient-grasp/ckpts/may26_light_1 --tensorboard-dir /kaggle/working/efficient-grasp/logs --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
+## Colab
+# python train.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --tensorboard-dir /content/drive/MyDrive/MTP/logs --weights imagenet cornell /content/drive/MyDrive/archive
+# python train.py --phi 0 --batch-size 16 --lr 1e-4 --epochs 200 --snapshot-path /content/drive/MyDrive/MTP/grasp_ckp/26may_light_1 --tensorboard-dir /content/drive/MyDrive/MTP/logs --weights imagenet cornell /content/drive/MyDrive/archive
 
 # Starting training timer
 from datetime import datetime
@@ -14,11 +18,14 @@ import json
 from dataset_processing.cornell_generator import CornellDataset
 
 import tensorflow as tf
+## To supress console output
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # or any {'0', '1', '2'}
 
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_virtual_device_configuration(physical_devices[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2048)])
-assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
-config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
+# physical_devices = tf.config.experimental.list_physical_devices('GPU')
+# tf.config.experimental.set_virtual_device_configuration(physical_devices[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2048)])
+# assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
+# config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 
 # Optimization after profiling
@@ -268,7 +275,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
         mode       = 'min',
         min_delta  = 0.0001,
         cooldown   = 5,
-        min_lr     = 1e-6
+        min_lr     = 1e-7
     ))
     
     # save the model

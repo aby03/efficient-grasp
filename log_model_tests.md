@@ -126,7 +126,7 @@ multi model params modified
 
 
 # A Series:
-RGB Images
+RGD Images
 bifpn_widths = (144, 60, 96)   # 144
 bifpn_depths = (3, 3, 3)                # 3
 subnet_depths = (3, 3, 4)               # 4
