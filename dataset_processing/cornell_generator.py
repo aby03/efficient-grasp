@@ -1,14 +1,15 @@
 import glob
 import os
 
-from dataset_processing import image
-from dataset_processing import grasp as gp
-# import image        # For Debugging
-# import grasp as gp  # For Debugging
+# from dataset_processing import image
+# from dataset_processing import grasp as gp
+import image        # For Debugging
+import grasp as gp  # For Debugging
 
 import numpy as np
 import random
 from tensorflow.python.keras.utils.data_utils import Sequence
+from utils.anchors import anchors_for_shape, anchor_targets_bbox, AnchorParameters
 
 #Debug
 import json
@@ -57,10 +58,11 @@ class CornellDataset(Sequence):
         # FOR RGB IMAGE
         # self.rgd_files = [f.replace('z.png', 'r.png') for f in self.rgd_files]
         self.length = len(self.grasp_files)
-
         if self.length == 0:
             raise FileNotFoundError('No dataset files found. Check path: {}'.format(dataset_path))
 
+        self.anchor_parameters = AnchorParameters.default
+        self.anchors = anchors_for_shape((self.output_size, self.output_size), anchor_params = self.anchor_parameters)
         self.indexes = np.arange(len(self.rgd_files))
         self.on_epoch_end()
 
@@ -166,122 +168,136 @@ class CornellDataset(Sequence):
     def __data_generation(self, indexes):
         'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
         # Initialization
-        X = np.empty((self.batch_size, self.output_size, self.output_size, self.n_channels))
-        y_grasp = []
 
+        if self.train:
+            X, annotations_groups = self.__get_train_item(indexes)
+            return X, annotations_groups
+        else:
+            # For every image in batch
+            for i in range(indexes.shape[0]):
+                else:
+                    # If validation data
+                    rgd_img, y_grasp_img = self.__get_valid_item(indexes, i)
+                
+                # Store Image sample
+                X[i,] = rgd_img
+                # Store all grasps for an image
+                y_grasp.append(y_grasp_img)
+
+            yy = np.asarray(y_grasp)
+            return X, yy
+
+    def __get_train_item(self, indexes):
+        X = np.empty((self.batch_size, self.output_size, self.output_size, self.n_channels))
+        annotations_group = []
         # For every image in batch
         for i in range(indexes.shape[0]):
-            if self.train:
-                # If training data
-                # Rotation augmentation
-                if self.random_rotate:
-                    rotations = [0, np.pi / 2, 2 * np.pi / 2, 3 * np.pi / 2]
-                    rot = random.choice(rotations)
-                else:
-                    rot = 0.0
-                # Zoom Augmentation
-                if self.random_zoom:
-                    zoom_factor = np.random.uniform(0.5, 0.875)
-                else:
-                    zoom_factor = 0.875
-                
-                # Load image with zoom and rotation
-                rgd_img = self.get_rgd(indexes[i], rot, zoom_factor)
-
-                # Load bboxes
-                gtbb = self.get_gtbb(indexes[i], rot, zoom_factor)
-                # Pick all grasps
-                y_grasp_image = []
-                # Pad count
-                count = 30
-                for g_id in range(len(gtbb.grs)):
-                    # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
-                    grasp = (gtbb[g_id].as_grasp).as_list
-                    # Store each grasp for an image
-                    y_grasp_image.append(grasp)
-                    count -= 1
-                    if count == 0:
-                        break
-                while (count > 0):
-                    # pad_0 = [1e8, 1e8, 1e8, 1e8, 1e8, 1e8]
-                    pad_0 = [1e16, 1e16, 1e16, 1e16, 1e16, 1e16]
-                    # pad_0 = [float('inf'), float('inf'), float('inf'), float('inf'), float('inf'), float('inf')]
-                    y_grasp_image.append(pad_0)
-                    count -= 1
-                # Store all grasps for an image
-                y_grasp.append(y_grasp_image)
-
+            # Rotation augmentation
+            if self.random_rotate:
+                rotations = [0, np.pi / 2, 2 * np.pi / 2, 3 * np.pi / 2]
+                rot = random.choice(rotations)
             else:
-                # If validation data
-                # Load image with 1 zoom and 0 rotation
-                rgd_img = self.get_rgd(indexes[i], 0, 0.875)
+                rot = 0.0
+            # Zoom Augmentation
+            if self.random_zoom:
+                zoom_factor = np.random.uniform(0.5, 0.875)
+            else:
+                zoom_factor = 0.875
+            # Load image with zoom and rotation
+            rgd_img = self.get_rgd(indexes[i], rot, zoom_factor)
+            # Load bboxes
+            gtbb = self.get_gtbb(indexes[i], rot, zoom_factor)
+            # Pick all grasps
+            annotations = { 'labels': np.zeros((len(gtbb.grs),)),
+                            'bboxes': np.zeros((len(gtbb.grs), 4))}
+            for g_id in range(len(gtbb.grs)):
+                # Get Grasp as [xmin, ymin, xmax, ymax] and angle
+                grasp_vec = gtbb[g_id].as_grasp
+                grasp_bbox = grasp_vec.as_horizontal_bbox
+                grasp_angle = grasp_vec.as_angle
+                print('BBOX: ', grasp_bbox)
+                print('ANGLE: ', grasp_angle)
+                print('ANGLE CLASS: ', int(round( (grasp_angle+np.pi/2) / (np.pi / 12))))
+                print('ANGLE CLASS: ', int(round( (grasp_angle+np.pi/2) / (np.pi / 12))) % 12)
+                '''Generate annotations
+                    labels: theta label (0, 15, 30, ..., 165) -> len = 12
+                    bboxes: x1, y1, x2, y2 <- get from x y h w
+                '''
+                # Angle Class: 0-11 for every 15 degree angle
+                annotations['labels'][g_id] = int(round( (grasp_angle+np.pi/2) / (np.pi / 12))) % 12
+                annotations['bboxes'][g_id,:] = grasp_bbox
+                print(annotations)
+            # Store each annotation for an image
+            annotations_group.append(annotations)
+    
+        # # # Encode labels
+        # batches_targets = anchor_targets_bbox(
+        #     self.anchors,
+        #     image_group,
+        #     annotations_group,
+        #     num_classes=self.num_classes(),
+        #     num_rotation_parameters = self.rotation_parameter + 2, #+1 for the is_symmetric flag and +1 for the class idx to choose the correct model 3d points
+        #     num_translation_parameters = self.translation_parameter, #x,y in 2D and Tz
+        #     translation_anchors = self.translation_anchors,
+        # )
 
-                # Load bboxes
-                gtbb = self.get_gtbb(indexes[i], 0, 0.875)
-                # Pick all grasps
-                y_grasp_image = []
-                # Pad count
-                count = 30
-                for g_id in range(len(gtbb.grs)):
-                    # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
-                    grasp = (gtbb[g_id].as_grasp).as_list
-                    # Store each grasp for an image
-                    y_grasp_image.append(grasp)
-                    count -= 1
-                    if count == 0:
-                        break
-                while (count > 0):
-                    pad_0 = [1e8, 1e8, 1e8, 1e8, 1e8, 1e8]
-                    y_grasp_image.append(pad_0)
-                    count -= 1
-                # Store all grasps for an image
-                y_grasp.append(y_grasp_image)
-                ## OLD Val START
-                # for g_id in range(len(gtbb.grs)):
-                #     # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
-                #     grasp = (gtbb[g_id].as_grasp).as_list 
-                #     # Store each grasp for an image
-                #     y_grasp_image.append(grasp)
+        ## Debug Start
+        # # Display all Grasps
+        # import matplotlib.pyplot as plt
+        # fig = plt.figure()
+        # ax = fig.add_axes([0,0,1,1])
+        # ax.imshow(rgd_img)
+        # gtbb.plot(ax, 1)
+        # plt.show()
+        ## Debug end  
+        return X, annotations_group
+    
+    def __get_valid_item(self, indexes, i):
+        # For single image
+        # Load image with 1 zoom and 0 rotation
+        rgd_img = self.get_rgd(indexes[i], 0, 0.875)
+        # Load bboxes
+        gtbb = self.get_gtbb(indexes[i], 0, 0.875)
+        # Pick all grasps
+        y_grasp_image = []
+        # Pad count
+        count = 30
+        for g_id in range(len(gtbb.grs)):
+            # Get Grasp as list [y x sin_t cos_t h w] AFTER NORMALIZATION
+            grasp = (gtbb[g_id].as_grasp).as_list
+            # Store each grasp for an image
+            y_grasp_image.append(grasp)
+            count -= 1
+            if count == 0:
+                break
+        while (count > 0):
+            pad_0 = [1e8, 1e8, 1e8, 1e8, 1e8, 1e8]
+            y_grasp_image.append(pad_0)
+            count -= 1
+                    
+        ## Debug Start
+        # # Display all Grasps
+        # import matplotlib.pyplot as plt
+        # fig = plt.figure()
+        # ax = fig.add_axes([0,0,1,1])
+        # ax.imshow(rgd_img)
+        # gtbb.plot(ax, 1)
+        # plt.show()
+        ## Debug end  
+        return rgd_img, y_grasp_image
 
-                # # Store all grasps for an image
-                # y_grasp.append(y_grasp_image)
-                ## OLD Val END
-                        ## Debug start
-            ## Debug Start
-            # # Display all Grasps
-            # import matplotlib.pyplot as plt
-            # fig = plt.figure()
-            # ax = fig.add_axes([0,0,1,1])
-            # ax.imshow(rgd_img)
-            # gtbb.plot(ax, 1)
-            # plt.show()
-            ## Debug end    
-            # Store Image sample
-            X[i,] = rgd_img
-        if not self.run_test:
-            yy = np.asarray(y_grasp)
-            # print("debug: ", yy.shape)
-            return X, yy
-        else:
-            # Return RGB image for displaying
-            X_rgb = np.empty((self.batch_size, self.output_size, self.output_size, self.n_channels))
-            for i in range(indexes.shape[0]):
-                X_rgb[i,] = self.get_rgb(indexes[i], 0, 0.875, normalise=False)
+### TESTING
+dataset = "/home/aby/Workspace/Cornell/archive"
+with open(dataset+'/train_1.txt', 'r') as filehandle:
+    train_data = json.load(filehandle)
 
-            return [X, X_rgb], gtbb
+train_generator = CornellDataset(
+    dataset,
+    train_data,
+    train=True,
+    shuffle=False,
+    batch_size=1
+)
 
-# ### TESTING
-# dataset = "/home/aby/Workspace/Cornell/archive"
-# with open(dataset+'/train_1.txt', 'r') as filehandle:
-#     train_data = json.load(filehandle)
-
-# train_generator = CornellDataset(
-#     dataset,
-#     train_data,
-#     train=True,
-#     shuffle=False,
-#     batch_size=1
-# )
-
-# for i in range(0, 20):
-#     train_generator[i]
+for i in range(0, 20):
+    train_generator[i]

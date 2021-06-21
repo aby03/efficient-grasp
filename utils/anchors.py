@@ -47,7 +47,6 @@ def anchor_targets_bbox(
         num_classes,
         num_rotation_parameters,
         num_translation_parameters,
-        translation_anchors,
         negative_overlap = 0.4,
         positive_overlap = 0.5,
 ):
@@ -259,7 +258,7 @@ def anchors_for_shape(
 
     # compute anchors over all pyramid levels
     all_anchors = np.zeros((0, 4))
-    all_translation_anchors = np.zeros((0, 3))
+    # all_translation_anchors = np.zeros((0, 3))
     for idx, p in enumerate(pyramid_levels):
         anchors = generate_anchors(
             base_size=anchor_params.sizes[idx],
@@ -268,11 +267,11 @@ def anchors_for_shape(
         )
         translation_anchors = np.zeros(shape = (len(anchor_params.ratios) * len(anchor_params.scales), 2))
         shifted_anchors = shift(image_shapes[idx], anchor_params.strides[idx], anchors)
-        shifted_translation_anchors = translation_shift(image_shapes[idx], anchor_params.strides[idx], translation_anchors)
+        # shifted_translation_anchors = translation_shift(image_shapes[idx], anchor_params.strides[idx], translation_anchors)
         all_anchors     = np.append(all_anchors, shifted_anchors, axis=0)
-        all_translation_anchors = np.append(all_translation_anchors, shifted_translation_anchors, axis = 0)
+        # all_translation_anchors = np.append(all_translation_anchors, shifted_translation_anchors, axis = 0)
 
-    return all_anchors.astype(np.float32), all_translation_anchors.astype(np.float32)
+    return all_anchors.astype(np.float32)#, all_translation_anchors.astype(np.float32)
 
 
 def shift(feature_map_shape, stride, anchors):

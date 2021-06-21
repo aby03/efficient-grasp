@@ -335,6 +335,13 @@ class GraspRectangle:
         return (np.arctan2(-dy, dx) + np.pi / 2) % np.pi - np.pi / 2
 
     @property
+    def as_five_vec(self):
+        '''
+        center: [y, x] format
+        '''
+        return [*self.center, self.angle, self.length, self.width]
+
+    @property
     def as_grasp(self):
         """
         :return: GraspRectangle converted to a Grasp
@@ -497,7 +504,12 @@ class Grasp:
         
         # Assign Values
         self.center = center    # in [y, x] format
-        # self.angle = angle  # Positive angle means rotate anti-clockwise from horizontal.
+        if sin_t == 0:
+            self.angle = 0  # Positive angle means rotate anti-clockwise from horizontal.
+        elif cos_t == 0:
+            self.angle = np.pi / 2
+        else:
+            self.angle = np.arctan(sin_t / cos_t)
         self.quality = quality
         self.length = length
         self.width = width
@@ -530,6 +542,10 @@ class Grasp:
         return center, sin_t, cos_t, h, w
 
     @property
+    def as_angle(self):
+        return self.angle
+
+    @property
     def as_list(self):
         center, sin_t, cos_t, length, width = self.normalize(self.center, self.sin_t, self.cos_t, self.length, self.width)
         return [*center, 
@@ -556,6 +572,18 @@ class Grasp:
                     [x2 - self.width / 2 * yo, y2 - self.width / 2 * xo],
                     [x2 + self.width / 2 * yo, y2 + self.width / 2 * xo],
                     [x1 + self.width / 2 * yo, y1 + self.width / 2 * xo],
+                ]
+    
+    @property
+    def as_horizontal_bbox(self):
+        """
+        Convert to list of bboxes
+        :return: list of points in [x1(min), y1(min), x2(max), y2(max)]
+        """
+
+        return  [
+                    self.center[1] - self.length / 2, self.center[0] - self.width / 2,
+                    self.center[1] + self.length / 2, self.center[0] + self.width / 2,
                 ]
 
     @property
