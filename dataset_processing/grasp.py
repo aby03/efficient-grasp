@@ -346,7 +346,7 @@ class GraspRectangle:
         """
         :return: GraspRectangle converted to a Grasp
         """
-        return Grasp(self.center, np.sin(self.angle), np.cos(self.angle), length=self.length, width=self.width)
+        return Grasp(self.center, self.angle, self.length, self.width)
 
     @property
     def center(self):
@@ -497,31 +497,34 @@ class Grasp:
     A Grasp represented by a center pixel, rotation angle and gripper width (length)
     """
 
-    def __init__(self, center, sin_t, cos_t, length=60, width=30, quality=-1, unnorm=False):
+    def __init__(self, center, angle, length, width, quality=-1, unnorm=False):
         # Unnormalize coords first if values coming from prediction
-        if unnorm:
-            center, sin_t, cos_t, length, width = self.unnormalize(center, sin_t, cos_t, length, width)
+        # if unnorm:
+        #     center, sin_t, cos_t, length, width = self.unnormalize(center, sin_t, cos_t, length, width)
         
         # Assign Values
         self.center = center    # in [y, x] format
-        if sin_t == 0:
-            self.angle = 0  # Positive angle means rotate anti-clockwise from horizontal.
-        elif cos_t == 0:
-            self.angle = np.pi / 2
-        else:
-            self.angle = np.arctan(sin_t / cos_t)
+        # if sin_t == 0:
+        #     self.angle = 0  # Positive angle means rotate anti-clockwise from horizontal.
+        # elif cos_t == 0:
+        #     self.angle = np.pi / 2
+        # else:
+        #     self.angle = np.arctan(sin_t / cos_t)
+        self.angle = angle
+        self.sin_t = np.sin(angle)
+        self.cos_t = np.cos(angle)
         self.quality = quality
         self.length = length
         self.width = width
 
-        # Apply sin cos constraint
-        if abs(sin_t**2 + cos_t**2 - 1) > 1e-4:
-            norm_fact = (sin_t**2 + cos_t**2)**0.5
-            self.sin_t = sin_t / norm_fact
-            self.cos_t = cos_t / norm_fact
-        else:
-            self.sin_t = sin_t
-            self.cos_t = cos_t
+        # # Apply sin cos constraint
+        # if abs(sin_t**2 + cos_t**2 - 1) > 1e-4:
+        #     norm_fact = (sin_t**2 + cos_t**2)**0.5
+        #     self.sin_t = sin_t / norm_fact
+        #     self.cos_t = cos_t / norm_fact
+        # else:
+        #     self.sin_t = sin_t
+        #     self.cos_t = cos_t
 
     def unnormalize(self, center, sin_t, cos_t, h, w):
         center[0] = center[0] * y_std + y_mean

@@ -9,7 +9,7 @@ from tensorflow.keras import backend
 from tfkeras import EfficientNetB0, EfficientNetB1, EfficientNetB2, EfficientNetB3, EfficientNetB4, EfficientNetB5, EfficientNetB6
 
 from layers import ClipBoxes, RegressBoxes, FilterDetections, wBiFPNAdd, BatchNormalization, RegressTranslation, CalculateTxTy, GroupNormalization
-# from initializers import PriorProbability
+from initializers import PriorProbability
 from utils.anchors import anchors_for_shape
 import numpy as np
 
@@ -62,6 +62,7 @@ def get_scaled_parameters_multi(phi):
 
 def build_EfficientGrasp_multi(phi,
                         num_anchors = 9,
+                        num_classes = 12,
                         score_threshold = 0.5,
                         anchor_parameters = None,
                         freeze_bn = False,
@@ -93,6 +94,12 @@ def build_EfficientGrasp_multi(phi,
     fpn_feature_maps = build_BiFPN(backbone_feature_maps, bifpn_depth, bifpn_width, num_groups_gn, freeze_bn)
 
     # 3. Build GraspNet
+    angle_net = AngleNet(subnet_width,
+                        subnet_depth,
+                        num_classes = num_classes,
+                        num_anchors = num_anchors,
+                        freeze_bn = freeze_bn,
+                        name = 'angle_net')
     grasp_net = GraspNet(subnet_width,
                         subnet_depth,
                         subnet_num_iteration_steps,
@@ -102,40 +109,38 @@ def build_EfficientGrasp_multi(phi,
                         freeze_bn=freeze_bn, 
                         name='grasp_net')
     
-    # Get reshape dims for applying grasp net
-    reshape_dim = 0     # 64x64 + 32x32 + 16x16 + 8x8 + 4x4
-    for i in range(len(fpn_feature_maps)):
-        reshape_dim += fpn_feature_maps[i].shape[1]*fpn_feature_maps[i].shape[2]
+    # # Get reshape dims for applying grasp net
+    # reshape_dim = 0     # 64x64 + 32x32 + 16x16 + 8x8 + 4x4
+    # for i in range(len(fpn_feature_maps)):
+    #     reshape_dim += fpn_feature_maps[i].shape[1]*fpn_feature_maps[i].shape[2]
     
-    # Apply GraspNet
+    # Apply Angle Net to get angle class
+    angle_classification = [angle_net([feature, i]) for i, feature in enumerate(fpn_feature_maps)]
+    angle_classification = layers.Concatenate(axis=1, name='angle_classification')(angle_classification)
+
+    # Apply GraspNet to get grasp bounding box
     grasp_regression = [grasp_net([feature, i]) for i, feature in enumerate(fpn_feature_maps)]
-    grasp_regression = layers.Concatenate(axis=1, name='regression_con')(grasp_regression)
+    grasp_bbox_regression = layers.Concatenate(axis=1, name='bbox_regression')(grasp_regression)
 
     #get anchors and apply predicted translation offsets to translation anchors
-    anchors, translation_anchors = anchors_for_shape((input_size, input_size), anchor_params = anchor_parameters)
-
-    translation_anchors_input = np.expand_dims(translation_anchors, axis = 0)
-    
-    # translation_xy_Tz = RegressTranslation(name = 'translation_regression')([translation_anchors_input, translation_raw])
-    # translation = CalculateTxTy(name = 'translation')(translation_xy_Tz,
-                                                        fx = camera_parameters_input[:, 0],
-                                                        fy = camera_parameters_input[:, 1],
-                                                        px = camera_parameters_input[:, 2],
-                                                        py = camera_parameters_input[:, 3],
-                                                        tz_scale = camera_parameters_input[:, 4],
-                                                        image_scale = camera_parameters_input[:, 5])
+    anchors = anchors_for_shape((input_size, input_size), anchor_params = anchor_parameters)
     
     # apply predicted 2D bbox regression to anchors
     anchors_input = np.expand_dims(anchors, axis = 0)
-    bboxes = RegressBoxes(name='boxes')([anchors_input, bbox_regression[..., :4]])
+    bboxes = RegressBoxes(name='boxes')([anchors_input, grasp_bbox_regression[..., :4]])
     bboxes = ClipBoxes(name='clipped_boxes')([image_input, bboxes])
     
-    #concat rotation and translation outputs to transformation output to have a single output for transformation loss calculation
-    #standard concatenate layer throws error that shapes does not match because translation shape dim 2 is known via translation_anchors and rotation shape dim 2 is None
-    #so just use lambda layer with tf concat
-    transformation = layers.Lambda(lambda input_list: tf.concat(input_list, axis = -1), name="transformation")([rotation, translation])
-
-
+    ## Train Output Shape -> [(None, 49104, 13), (None, 49104, 6)]
+    efficientgrasp_train = models.Model(inputs = [image_input], outputs = [angle_classification, grasp_bbox_regression], name = 'efficientgrasp_train')
+    
+    # filter detections (apply NMS / score threshold / select top-k)
+    filtered_detections = FilterDetections(     name = 'filtered_detections',
+                                                class_specific_filter = False,
+                                                score_threshold = score_threshold
+                                           )([bboxes, angle_classification])
+    
+    ## Prediction Output shape -> [(None, 100, 4), (None, 100), (None, 100)] -> (bbox, score, angle_class)
+    efficientgrasp_prediction = models.Model(inputs = [image_input], outputs = filtered_detections, name = 'efficientpose_prediction')
     ''' OLD MODEL
     grasp_regression = layers.Reshape((-1,reshape_dim * output_dim))(grasp_regression) # 5456 for num_anchors=1 && 49104 for 9 
 
@@ -157,7 +162,21 @@ def build_EfficientGrasp_multi(phi,
     all_layers = list(set(efficientgrasp_train.layers + efficientgrasp_prediction.layers))
 
     if print_architecture:
-        efficientgrasp_train.summary()
+        # freeze backbone layers
+        # 227, 329, 329, 374, 464, 566, 656 -> based on EfficientNet chosen. 227 for B0
+        
+        ## Train Arch
+        # for i in range(1, 227):
+        #     efficientgrasp_train.layers[i].trainable = False
+        # efficientgrasp_train.summary()
+        # print(efficientgrasp_train.layers[-2].output_shape)
+        # print(efficientgrasp_train.layers[-1].output_shape)
+        
+        ## Prediction Arch
+        for i in range(1, 227):
+            efficientgrasp_prediction.layers[i].trainable = False
+        efficientgrasp_prediction.summary()
+        print(efficientgrasp_prediction.layers[-1].output_shape)
     # Return Model
     return efficientgrasp_train, efficientgrasp_prediction, all_layers
 
@@ -356,6 +375,45 @@ def SeparableConvBlock(num_channels, kernel_size, strides, name, freeze_bn = Fal
     # return reduce(lambda f, g: lambda *args, **kwargs: f(*args, **kwargs), (f1, f2))
     return reduce(lambda f, g: lambda *args, **kwargs: g(f(*args, **kwargs)), (f1, f2))
 
+class AngleNet(models.Model):
+    def __init__(self, width, depth, num_classes = 12, num_anchors = 9, freeze_bn = False, **kwargs):
+        super(AngleNet, self).__init__(**kwargs)
+        self.width = width
+        self.depth = depth
+        self.num_classes = num_classes
+        self.num_anchors = num_anchors
+        options = {
+            'kernel_size': 3,
+            'strides': 1,
+            'padding': 'same',
+        }
+
+        kernel_initializer = {
+            'depthwise_initializer': initializers.VarianceScaling(),
+            'pointwise_initializer': initializers.VarianceScaling(),
+        }
+        options.update(kernel_initializer)
+        self.convs = [layers.SeparableConv2D(filters = self.width, bias_initializer = 'zeros', name = f'{self.name}/class-{i}', **options) for i in range(self.depth)]
+        self.head = layers.SeparableConv2D(filters = self.num_classes * self.num_anchors, bias_initializer = PriorProbability(probability = 0.01), name = f'{self.name}/class-predict', **options)
+
+        self.bns = [[BatchNormalization(freeze = freeze_bn, momentum = MOMENTUM, epsilon = EPSILON, name = f'{self.name}/class-{i}-bn-{j}') for j in range(3, 8)] for i in range(self.depth)]
+        self.activation = layers.Lambda(lambda x: tf.nn.swish(x))
+        self.reshape = layers.Reshape((-1, self.num_classes))
+        self.activation_sigmoid = layers.Activation('sigmoid')
+        self.level = 0
+
+    def call(self, inputs, **kwargs):
+        feature, level = inputs
+        for i in range(self.depth):
+            feature = self.convs[i](feature)
+            # feature = self.bns[i][self.level](feature)
+            feature = self.activation(feature)
+        outputs = self.head(feature)
+        outputs = self.reshape(outputs)
+        outputs = self.activation_sigmoid(outputs)
+        self.level += 1
+        return outputs
+
 class GraspNet(models.Model):
     def __init__(self, width, depth, num_iteration_steps, use_group_norm = True, num_groups_gn = 3, num_anchors = 1, freeze_bn = False, **kwargs):
         super(GraspNet, self).__init__(**kwargs)
@@ -365,7 +423,8 @@ class GraspNet(models.Model):
         self.num_iteration_steps = num_iteration_steps
         self.use_group_norm = use_group_norm
         self.num_groups_gn = num_groups_gn
-        self.num_values = 6 # y, x, sin_t, cos_t, h, w
+        self.num_values = 4 # y, x, h, w
+        # self.num_values = 6 # y, x, sin_t, cos_t, h, w
         # self.num_values = 5 # x, y, tan_t, h, w
         channel_axis=-1
         options = {
@@ -473,4 +532,4 @@ class IterativeGraspSubNet(models.Model):
         return outputs
 
 
-build_EfficientGrasp_multi(0, print_architecture=True)
+# build_EfficientGrasp_multi(0, print_architecture=True)

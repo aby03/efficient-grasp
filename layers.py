@@ -256,10 +256,10 @@ class CalculateTxTy(keras.layers.Layer):
 def filter_detections(
         boxes,
         classification,
-        rotation,
-        translation,
-        num_rotation_parameters,
-        num_translation_parameters = 3,
+        # rotation,
+        # translation,
+        # num_rotation_parameters,
+        # num_translation_parameters = 3,
         class_specific_filter = True,
         nms = True,
         score_threshold = 0.01,
@@ -359,8 +359,8 @@ def filter_detections(
     indices = keras.backend.gather(indices[:, 0], top_indices)
     boxes = keras.backend.gather(boxes, indices)
     labels = keras.backend.gather(labels, top_indices)
-    rotation = keras.backend.gather(rotation, indices)
-    translation = keras.backend.gather(translation, indices)
+    # rotation = keras.backend.gather(rotation, indices)
+    # translation = keras.backend.gather(translation, indices)
 
     # zero pad the outputs
     pad_size = keras.backend.maximum(0, max_detections - keras.backend.shape(scores)[0])
@@ -368,17 +368,17 @@ def filter_detections(
     scores = tf.pad(scores, [[0, pad_size]], constant_values=-1)
     labels = tf.pad(labels, [[0, pad_size]], constant_values=-1)
     labels = keras.backend.cast(labels, 'int32')
-    rotation = tf.pad(rotation, [[0, pad_size], [0, 0]], constant_values=-1)
-    translation = tf.pad(translation, [[0, pad_size], [0, 0]], constant_values=-1)
+    # rotation = tf.pad(rotation, [[0, pad_size], [0, 0]], constant_values=-1)
+    # translation = tf.pad(translation, [[0, pad_size], [0, 0]], constant_values=-1)
 
     # set shapes, since we know what they are
     boxes.set_shape([max_detections, 4])
     scores.set_shape([max_detections])
     labels.set_shape([max_detections])
-    rotation.set_shape([max_detections, num_rotation_parameters])
-    translation.set_shape([max_detections, num_translation_parameters])
+    # rotation.set_shape([max_detections, num_rotation_parameters])
+    # translation.set_shape([max_detections, num_translation_parameters])
 
-    return [boxes, scores, labels, rotation, translation]
+    return [boxes, scores, labels] #, rotation, translation]
 
 
 class FilterDetections(keras.layers.Layer):
@@ -388,8 +388,8 @@ class FilterDetections(keras.layers.Layer):
 
     def __init__(
             self,
-            num_rotation_parameters,
-            num_translation_parameters = 3,
+            # num_rotation_parameters,
+            # num_translation_parameters = 3,
             nms = True,
             class_specific_filter = True,
             nms_threshold = 0.5,
@@ -417,8 +417,8 @@ class FilterDetections(keras.layers.Layer):
         self.score_threshold = score_threshold
         self.max_detections = max_detections
         self.parallel_iterations = parallel_iterations
-        self.num_rotation_parameters = num_rotation_parameters
-        self.num_translation_parameters = num_translation_parameters
+        # self.num_rotation_parameters = num_rotation_parameters
+        # self.num_translation_parameters = num_translation_parameters
         super(FilterDetections, self).__init__(**kwargs)
 
     def call(self, inputs, **kwargs):
@@ -430,23 +430,23 @@ class FilterDetections(keras.layers.Layer):
         """
         boxes = inputs[0]
         classification = inputs[1]
-        rotation = inputs[2]
-        translation = inputs[3]
+        # rotation = inputs[2]
+        # translation = inputs[3]
 
         # wrap nms with our parameters
         def _filter_detections(args):
             boxes_ = args[0]
             classification_ = args[1]
-            rotation_ = args[2]
-            translation_ = args[3]
+            # rotation_ = args[2]
+            # translation_ = args[3]
 
             return filter_detections(
                 boxes_,
                 classification_,
-                rotation_,
-                translation_,
-                self.num_rotation_parameters,
-                self.num_translation_parameters,
+                # rotation_,
+                # translation_,
+                # self.num_rotation_parameters,
+                # self.num_translation_parameters,
                 nms = self.nms,
                 class_specific_filter = self.class_specific_filter,
                 score_threshold = self.score_threshold,
@@ -457,8 +457,8 @@ class FilterDetections(keras.layers.Layer):
         # call filter_detections on each batch item
         outputs = tf.map_fn(
             _filter_detections,
-            elems=[boxes, classification, rotation, translation],
-            dtype=['float32', 'float32', 'int32', 'float32', 'float32'],
+            elems=[boxes, classification], #, rotation, translation],
+            dtype=['float32', 'float32', 'int32'],#, 'float32', 'float32'],
             parallel_iterations=self.parallel_iterations
         )
 
@@ -479,8 +479,8 @@ class FilterDetections(keras.layers.Layer):
             (input_shape[0][0], self.max_detections, 4),
             (input_shape[1][0], self.max_detections),
             (input_shape[1][0], self.max_detections),
-            (input_shape[2][0], self.max_detections, self.num_rotation_parameters),
-            (input_shape[3][0], self.max_detections, self.num_translation_parameters),
+            # (input_shape[2][0], self.max_detections, self.num_rotation_parameters),
+            # (input_shape[3][0], self.max_detections, self.num_translation_parameters),
         ]
 
     def compute_mask(self, inputs, mask = None):
@@ -504,8 +504,8 @@ class FilterDetections(keras.layers.Layer):
             'score_threshold': self.score_threshold,
             'max_detections': self.max_detections,
             'parallel_iterations': self.parallel_iterations,
-            'num_rotation_parameters': self.num_rotation_parameters,
-            'num_translation_parameters': self.num_translation_parameters,
+            # 'num_rotation_parameters': self.num_rotation_parameters,
+            # 'num_translation_parameters': self.num_translation_parameters,
         })
 
         return config

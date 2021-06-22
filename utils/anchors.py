@@ -45,8 +45,8 @@ def anchor_targets_bbox(
         image_group,
         annotations_group,
         num_classes,
-        num_rotation_parameters,
-        num_translation_parameters,
+        # num_rotation_parameters,
+        # num_translation_parameters,
         negative_overlap = 0.4,
         positive_overlap = 0.5,
 ):
@@ -85,13 +85,13 @@ def anchor_targets_bbox(
     for annotations in annotations_group:
         assert ('bboxes' in annotations), "Annotations should contain bboxes."
         assert ('labels' in annotations), "Annotations should contain labels."
-        assert('transformation_targets' in annotations), "Annotations should contain transformation_targets."
+        # assert('transformation_targets' in annotations), "Annotations should contain transformation_targets."
 
     batch_size = len(image_group)
 
     regression_batch = np.zeros((batch_size, anchors.shape[0], 4 + 1), dtype=np.float32)
     labels_batch = np.zeros((batch_size, anchors.shape[0], num_classes + 1), dtype=np.float32)
-    transformation_batch  = np.zeros((batch_size, anchors.shape[0], num_rotation_parameters + num_translation_parameters + 1), dtype = np.float32)
+    # transformation_batch  = np.zeros((batch_size, anchors.shape[0], num_rotation_parameters + num_translation_parameters + 1), dtype = np.float32)
 
     # compute labels and regression targets
     for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
@@ -109,15 +109,15 @@ def anchor_targets_bbox(
             regression_batch[index, ignore_indices, -1] = -1
             regression_batch[index, positive_indices, -1] = 1
             
-            transformation_batch[index, ignore_indices, -1]   = -1
-            transformation_batch[index, positive_indices, -1] = 1
+            # transformation_batch[index, ignore_indices, -1]   = -1
+            # transformation_batch[index, positive_indices, -1] = 1
 
             # compute target class labels
             labels_batch[index, positive_indices, annotations['labels'][argmax_overlaps_inds[positive_indices]].astype(int)] = 1
 
             regression_batch[index, :, :4] = bbox_transform(anchors, annotations['bboxes'][argmax_overlaps_inds, :])
                 
-            transformation_batch[index, :, :-1] = annotations['transformation_targets'][argmax_overlaps_inds, :]
+            # transformation_batch[index, :, :-1] = annotations['transformation_targets'][argmax_overlaps_inds, :]
                 
         # ignore anchors outside of image
         if image.shape:
@@ -126,9 +126,9 @@ def anchor_targets_bbox(
 
             labels_batch[index, indices, -1] = -1
             regression_batch[index, indices, -1] = -1
-            transformation_batch[index, indices, -1] = -1
+            # transformation_batch[index, indices, -1] = -1
 
-    return labels_batch, regression_batch, transformation_batch
+    return labels_batch, regression_batch#, transformation_batch
 
 
 def compute_gt_annotations(
