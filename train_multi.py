@@ -146,7 +146,7 @@ def main(args = None):
                   loss={'bbox_regression': smooth_l1(),
                         'angle_classification': focal(),
                         },
-                  loss_weights = {'bbox_regression' : 2.0,
+                  loss_weights = {'bbox_regression' : 1.0,
                                   'angle_classification': 1.0
                                  })
 
