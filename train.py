@@ -193,9 +193,9 @@ def create_generators(args):
     if args.dataset_type == 'cornell':
         dataset = args.cornell_path
         # open output file for reading
-        with open(dataset+'/train_1.txt', 'r') as filehandle:
+        with open(dataset+'/train_4.txt', 'r') as filehandle:
             train_data = json.load(filehandle)
-        with open(dataset+'/valid_1.txt', 'r') as filehandle:
+        with open(dataset+'/valid_4.txt', 'r') as filehandle:
             valid_data = json.load(filehandle)
         
         train_generator = CornellDataset(
@@ -274,7 +274,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
         verbose    = 1,
         mode       = 'min',
         min_delta  = 0.0001,
-        cooldown   = 5,
+        cooldown   = 5, # Try 0 later
         min_lr     = 1e-7
     ))
     

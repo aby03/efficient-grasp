@@ -61,7 +61,7 @@
             "python": "/home/aby/miniconda3/envs/efficient-grasp/bin/python",
             "args" : ["--phi", "0",
                       "--batch-size", "4",
-                      "--lr", "1e-4",
+                      "--lr", "1e-4", // Try 1e-5 next
                       "--epochs", "150",
                       // "--no-snapshots",
                       // "--no-evaluation",
