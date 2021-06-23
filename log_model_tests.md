@@ -124,6 +124,26 @@ Multi model, Cornell
 Only grasp loss, no score loss
 multi model params modified
 
+# Anchor Series
+1. N1: 2021_06_22_20_57_00
+    loss ratio: 1:1
+    lr schedule: patience 5 cooldown 5
+    lr: 1e-4
+    epochs: 100
+    IoU still low, angle decreasing good enough
+
+2. N2: 2021_06_23_01_18_07
+    loss ratio: 3:1
+    lr schedule: patience 5 cd 0
+    lr: 1e-4
+    epochs: 100
+    IoU STILL LOW, angle diff is good enough
+        Total detected grasps:  305
+        grasp_acc_img: 0.46
+        grasp_accuracy: 0.3967
+        avg_iou: 0.11
+        avg_angle_diff: 11.64
+        avg_pred_grasp_score: 0.59
 
 # A Series:
 RGB Images

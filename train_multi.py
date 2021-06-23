@@ -135,18 +135,18 @@ def main(args = None):
             model.layers[i].trainable = False
 
     print("\nCompiling Model!\n")
-    model.compile(  
-                    optimizer=Adam(lr = args.lr, clipnorm = 0.001),
-                    loss={'regression_out': grasp_loss_multi(args.batch_size),
-                        #   'regression_score' score_loss_multi(),
-                         }
-                    # metric=['grasp_accuracy']
-                 )
+    # model.compile(  
+    #                 optimizer=Adam(lr = args.lr, clipnorm = 0.001),
+    #                 loss={'regression_out': grasp_loss_multi(args.batch_size),
+    #                     #   'regression_score' score_loss_multi(),
+    #                      }
+    #                 # metric=['grasp_accuracy']
+    #              )
     model.compile(optimizer=Adam(lr = args.lr, clipnorm = 0.001), 
                   loss={'bbox_regression': smooth_l1(),
                         'angle_classification': focal(),
                         },
-                  loss_weights = {'bbox_regression' : 1.0,
+                  loss_weights = {'bbox_regression' : 3.0,
                                   'angle_classification': 1.0
                                  })
 
