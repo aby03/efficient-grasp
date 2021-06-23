@@ -28,6 +28,7 @@ from tensorflow import keras
 from dataset_processing.grasp import Grasp
 from dataset_processing.cornell_generator import CornellDataset
 from dataset_processing.amazon_generator import AmazonDataset
+from dataset_processing.vmrd_generator import VMRDDataset
 from dataset_processing.grasp import get_grasp_from_pred
 import matplotlib
 import matplotlib.pyplot as plt
@@ -37,6 +38,7 @@ import matplotlib.pyplot as plt
 #######################################################
 # Build Model
 model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
+                                                        score_threshold = 0.3,
                                                         print_architecture=False)
 
 # load pretrained weights
@@ -48,12 +50,12 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 # model.load_weights('checkpoints/2021_06_11_06_48_40/amazon_finish.h5', by_name=True) ##203 (no useful results)
 # model.load_weights('checkpoints/2021_06_10_03_38_02/cornell_finish.h5', by_name=True) ##301 
 # model.load_weights('checkpoints/2021_06_12_16_37_53/cornell_finish.h5', by_name=True) ##TEST
-prediction_model.load_weights('checkpoints/2021_06_23_01_18_07/cornell_finish.h5', by_name=True) ##TEST
+prediction_model.load_weights('checkpoints/2021_06_23_20_33_49/cornell_finish.h5', by_name=True) ##TEST
 print("Weights loaded!")
 
-dataset_name = "cornell"
+dataset_name = "vmrd"
 run_dataset = True
-SAVE_FIGURE = True
+SAVE_FIGURE = False
 
 if run_dataset:
     if dataset_name == "cornell":
@@ -65,6 +67,27 @@ if run_dataset:
             train_data = json.load(filehandle)
         
         val_generator = CornellDataset(
+            dataset,
+            train_data,
+            train=False,
+            shuffle=False,
+            batch_size=1
+        )
+    elif dataset_name == "vmrd":
+        dataset = '/home/aby/Workspace/vmrd-v2'
+        with open(dataset+'/ImageSets/Main/trainval.txt', 'r') as filehandle:
+            lines = filehandle.readlines()
+            data = []
+            for line in lines:
+                data.append(line.strip())
+        train_data = []
+        valid_data = []
+        for i in range(len(data)):
+            if not i%10 == 0:
+                train_data.append(data[i])
+            else:
+                valid_data.append(data[i])
+        val_generator = VMRDDataset(
             dataset,
             train_data,
             train=False,
@@ -93,6 +116,8 @@ if run_dataset:
         # disp_img = X[0,:,:,:]
         if dataset_name == "cornell":
             rgd_img = image.Image.from_file(dataset+train_data[i])
+        elif dataset_name == "vmrd":
+            rgd_img = image.Image.from_file(dataset+'/JPEGImages/'+train_data[i]+'.jpg')
         else:
             rgd_img = image.Image.from_file(dataset+'/heightmap-color/'+train_data[i]+'.png')
         init_shape = rgd_img.img.shape

@@ -109,6 +109,7 @@ def main(args = None):
 
     print("\nBuilding Model!\n")
     model, prediction_model, all_layers = build_EfficientGrasp_multi(args.phi,
+                                score_threshold = 0.3,
                                 num_classes=12,
                                 print_architecture=False)
 
@@ -267,6 +268,7 @@ def create_generators(args):
         The training and validation generators.
     """
     common_args = {
+        'n_classes': 12,
         'batch_size': args.batch_size,
         'phi': args.phi,
     }

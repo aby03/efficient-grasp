@@ -145,6 +145,19 @@ multi model params modified
         avg_angle_diff: 11.64
         avg_pred_grasp_score: 0.59
 
+3. N3: 2021_06_23_20_33_49
+    grasp bbox snapping to closest horizontal box by angle
+    Total detected grasps:  324
+    grasp_acc_img: 0.62
+    grasp_accuracy: 0.7130
+    avg_iou: 0.22
+    avg_angle_diff: 9.81
+    avg_pred_grasp_score: 0.58
+    --IoU decent now. Score threshold needs to be reduced to 0.3 from 0.5 to get more detections and better accuracy
+
+4. N4: 
+    On VRMD Dataset
+
 # A Series:
 RGB Images
 bifpn_widths = (144, 60, 96)   # 144

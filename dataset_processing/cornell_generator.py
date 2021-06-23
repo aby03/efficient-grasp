@@ -178,7 +178,6 @@ class CornellDataset(Sequence):
     def __data_generation(self, indexes):
         'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
         # Initialization
-
         X, annotations_groups = self.__get_train_item(indexes)
         return X, annotations_groups
 
