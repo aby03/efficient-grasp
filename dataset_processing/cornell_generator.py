@@ -323,15 +323,15 @@ class CornellDataset(Sequence):
         #     # Store each annotation for an image
         #     annotations_group.append(y_grasp_image)
                         
-            ## Debug Start
-            # # Display all Grasps
-            # import matplotlib.pyplot as plt
-            # fig = plt.figure()
-            # ax = fig.add_axes([0,0,1,1])
-            # ax.imshow(rgd_img)
-            # gtbb.plot(ax, 1)
-            # plt.show()
-            ## Debug end  
+        ## Debug Start
+        # # Display all Grasps
+        # import matplotlib.pyplot as plt
+        # fig = plt.figure()
+        # ax = fig.add_axes([0,0,1,1])
+        # ax.imshow(rgd_img)
+        # gtbb.plot(ax, 1)
+        # plt.show()
+        ## Debug end  
         return X, annotations_group
 
 # ### TESTING

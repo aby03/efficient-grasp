@@ -14,18 +14,8 @@ from losses import grasp_loss
 from shapely import speedups
 speedups.disable()
 from shapely.geometry import Polygon # For IoU
+from dataset_processing.grasp import get_grasp_from_pred
 
-def get_grasp_from_pred(pred_grasp_bbox, pred_grasp_angle_class):
-    pred_grasp_angle = (np.pi / 12) * pred_grasp_angle_class + np.pi/2      # angle in radian
-    pred_grasp = [
-                    (pred_grasp_bbox[0] + pred_grasp_bbox[2]) / 2,      # x
-                    (pred_grasp_bbox[1] + pred_grasp_bbox[3]) / 2,      # y
-                    pred_grasp_angle,                                   # theta
-                    (pred_grasp_bbox[2] - pred_grasp_bbox[0]) / 2,      # h
-                    (pred_grasp_bbox[3] - pred_grasp_bbox[1]) / 2       # w
-                ]
-    pred_grasp_obj = Grasp((pred_grasp[1], pred_grasp[0]), *pred_grasp[2:])
-    return pred_grasp_obj
 
 def _get_detections(generator,
                     model, 

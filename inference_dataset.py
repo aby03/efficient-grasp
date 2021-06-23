@@ -28,10 +28,11 @@ from tensorflow import keras
 from dataset_processing.grasp import Grasp
 from dataset_processing.cornell_generator import CornellDataset
 from dataset_processing.amazon_generator import AmazonDataset
-
+from dataset_processing.grasp import get_grasp_from_pred
 import matplotlib
 import matplotlib.pyplot as plt
 
+#######################################################
 
 #######################################################
 # Build Model
@@ -47,11 +48,11 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 # model.load_weights('checkpoints/2021_06_11_06_48_40/amazon_finish.h5', by_name=True) ##203 (no useful results)
 # model.load_weights('checkpoints/2021_06_10_03_38_02/cornell_finish.h5', by_name=True) ##301 
 # model.load_weights('checkpoints/2021_06_12_16_37_53/cornell_finish.h5', by_name=True) ##TEST
-model.load_weights('checkpoints/2021_06_18_23_33_39/cornell_finish.h5', by_name=True) ##TEST
+prediction_model.load_weights('checkpoints/2021_06_23_01_18_07/cornell_finish.h5', by_name=True) ##TEST
 print("Weights loaded!")
 
 dataset_name = "cornell"
-run_dataset = False
+run_dataset = True
 SAVE_FIGURE = True
 
 if run_dataset:
@@ -63,7 +64,7 @@ if run_dataset:
         # with open(dataset+'/amazon_test.txt', 'r') as filehandle: ## To check Cornell trained model on amazon images
             train_data = json.load(filehandle)
         
-        train_generator = CornellDataset(
+        val_generator = CornellDataset(
             dataset,
             train_data,
             train=False,
@@ -78,7 +79,7 @@ if run_dataset:
             for line in lines:
                 train_data.append(line.strip())
         
-        train_generator = AmazonDataset(
+        val_generator = AmazonDataset(
             dataset,
             train_data,
             train=False,
@@ -86,9 +87,9 @@ if run_dataset:
             batch_size=1
         )
     # Visualization on Custom Images
-    for i in range(len(train_generator)):
+    for i in range(len(val_generator)):
         # Load Images
-        X, Y_true = train_generator[i]
+        X, Y_true = val_generator.get_annotation_val(i)
         # disp_img = X[0,:,:,:]
         if dataset_name == "cornell":
             rgd_img = image.Image.from_file(dataset+train_data[i])
@@ -110,20 +111,25 @@ if run_dataset:
         disp_img = rgd_img.img
 
         ## Predict on image
-        Y_pred = model.predict(X)       # Pred -> (b, 100, 7) where b=1
+        Y_pred = prediction_model.predict(X)       # Pred -> (b, 100, 7) where b=1
 
         # Remove batch dim
-        Y_out = Y_pred[0,:,:]
-
-        all_predictions = Y_out[:,0:6]
-        all_score = Y_out[:,6]
+        # Y_out = Y_pred[0]
+        # print('DEBG: ', Y_out.shape)
+        print('DEBG: ', Y_pred[0].shape)
+        print('DEBG: ', Y_pred[1].shape)
+        print('DEBG: ', Y_pred[2].shape)
+        all_predictions_bbox = Y_pred[0][0]
+        all_score = Y_pred[1][0]
+        all_angle_class = Y_pred[2][0]
         
         DISPLAY_PRED = 100
         # Sort y_out based on score
         sort_index = (-all_score).argsort()
         all_score = all_score[sort_index]
-        all_predictions = all_predictions[sort_index,:]
-        print(all_score)
+        all_predictions_bbox = all_predictions_bbox[sort_index,:]
+        all_angle_class = all_angle_class[sort_index]
+        # print(all_score)
         # print(all_score[:DISPLAY_PRED])
 
         ### Plot all grasps
@@ -141,19 +147,21 @@ if run_dataset:
         ax[1][1].set_title('Predicted and Labelled grasps')
         ## Show labelled grasps on orig image
         lab_grasp = Y_true[0]
-        for j in range(len(lab_grasp)):
-            if not lab_grasp[j][0] == 1e8:
-                plot_grasp = Grasp(lab_grasp[j][0:2], *lab_grasp[j][2:], unnorm=True)
-                plot_grasp.plot(ax[0][1], 'green')
-                plot_grasp.plot(ax[1][1], 'green')
+        # print(lab_grasp)
+        for j in range(lab_grasp['bboxes'].shape[0]):
+            plot_grasp = get_grasp_from_pred(lab_grasp['bboxes'][j], lab_grasp['labels'][j])
+            # plot_grasp = Grasp(lab_grasp[j][0:2], *lab_grasp[j][2:], unnorm=True)
+            plot_grasp.plot(ax[0][1], 'green')
+            plot_grasp.plot(ax[1][1], 'green')
         ## Show Predicted grasps on orig image
         colormap=plt.get_cmap('cool')
         display_score = all_score[:DISPLAY_PRED]
         center_y = []
         center_x = []
         col_norm = matplotlib.colors.Normalize(vmin=display_score[-1], vmax=display_score[0], clip=False)
-        for j in range(min(all_predictions.shape[0], DISPLAY_PRED)):
-            plot_grasp = Grasp(all_predictions[j][0:2], *all_predictions[j][2:], quality=display_score[j], unnorm=True)
+        for j in range(min(all_predictions_bbox.shape[0], DISPLAY_PRED)):
+            plot_grasp = get_grasp_from_pred(all_predictions_bbox[j], all_angle_class[j])
+            # plot_grasp = Grasp(all_predictions[j][0:2], *all_predictions[j][2:], quality=display_score[j], unnorm=True)
             plot_points = plot_grasp.as_gr.points
             points = np.vstack((plot_points, plot_points[0]))
             ax[1][0].plot(points[:, 1], points[:, 0], color=colormap(col_norm(display_score[j])))
@@ -174,7 +182,7 @@ else:
     ## TEST ON NON LABELLED IMAGES
     # Load list of images
     dataset = '/home/aby/Workspace/Cornell/archive'
-    with open(dataset+'/test.txt', 'r') as filehandle: ## To check trained model on unlabelled unprocessed amazon images
+    with open(dataset+'/test.txt', 'r') as filehandle: ## To check trained prediction_model on unlabelled unprocessed amazon images
         train_data = json.load(filehandle)
     # Load Image
     for i in range(len(train_data)):
@@ -182,7 +190,7 @@ else:
         disp_img = CornellDataset.load_custom_image(dataset+train_data[i], normalise=False)
         # Expand dim for batch
         X = X[np.newaxis, ...]
-        Y_pred = model.predict(X)
+        Y_pred = prediction_model.predict(X)
 
         # Remove batch dim
         Y_out = Y_pred[0,:,:]
