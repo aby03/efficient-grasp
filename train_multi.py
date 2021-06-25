@@ -398,7 +398,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
         monitor    = 'loss',
         factor     = 0.5,
-        patience   = 5,
+        patience   = 3,
         verbose    = 1,
         mode       = 'min',
         min_delta  = 0.0001,
