@@ -163,6 +163,14 @@ multi model params modified
     avg_iou: 0.17
     avg_angle_diff: 16.15
     avg_pred_grasp_score: 0.46
+    --------Results including top k ----------------------
+    grasp_acc_img: 0.99
+    top_score_accuracy: 0.9605
+    top_k_accuracy: 0.9887 for k = 5
+    grasp_accuracy: 0.9201
+    avg_iou: 0.20
+    avg_angle_diff: 15.13
+    avg_pred_grasp_score: 0.48
 
 4. N4: 2021_06_24_02_57_59
     On VRMD Dataset
@@ -188,6 +196,17 @@ CORNELL RGB IMAGES
     avg_iou: 0.16
     avg_angle_diff: 16.25
     avg_pred_grasp_score: 0.46
+    ------
+Inference Code Results
+    Images to check:  [50, 59, 72, 84, 89, 105, 113, 118, 148, 162]
+    grasp_acc_img: 0.99
+    top_score_accuracy: 0.9435
+    top_k_accuracy: 0.9887 for k = 5
+    grasp_accuracy: 0.9256
+  (Below calculated for top k grasps)
+    avg_iou: 0.20
+    avg_angle_diff: 14.55
+    avg_pred_grasp_score: 0.49
 
 # A Series:
 RGB Images

@@ -53,18 +53,21 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 # model.load_weights('checkpoints/2021_06_10_03_38_02/cornell_finish.h5', by_name=True) ##301 
 # model.load_weights('checkpoints/2021_06_12_16_37_53/cornell_finish.h5', by_name=True) ##TEST
 
-prediction_model.load_weights('checkpoints/2021_06_24_02_57_59/vmrd_best_val_loss.h5', by_name=True) ##VMRD
-# prediction_model.load_weights('checkpoints/2021_06_23_20_33_49/cornell_finish.h5', by_name=True) ##CORNELL
+# prediction_model.load_weights('checkpoints/2021_06_24_02_57_59/vmrd_best_val_loss.h5', by_name=True) ##VMRD
+prediction_model.load_weights('checkpoints/2021_06_23_20_33_49/cornell_finish.h5', by_name=True) ##CORNELL-RGD
+
+# prediction_model.load_weights('checkpoints/2021_06_25_18_19_28/cornell_finish.h5', by_name=True) ##CORNELL-RGB N3b 2021_06_25_18_19_28
 print("Weights loaded!")
 
-dataset_name = "vmrd"
+dataset_name = "cornell"
 run_dataset = True
 SAVE_FIGURE = False
 ### to show all keep Show_plots true and show_selective_plots false
-### to show select
+### to show select keep both true
 SHOW_PLOTS = False
 SHOW_SELECTIVE_PLOTS = False
-selective_plots = [70, 80, 92, 97, 113, 118, 132]
+# selective_plots = [70, 80, 92, 97, 113, 118, 132] 
+selective_plots = [50, 59, 72, 84, 89, 105, 113, 118, 148, 162] # For Cornell-RGB N3b
 
 if run_dataset:
     if dataset_name == "cornell":
@@ -238,12 +241,16 @@ if run_dataset:
     correct_img_pred_count = 0  # only 1 prediction counted per image
     avg_pred_grasp_score = 0
     top_score_correct = 0
+    top_k = 5
+    top_k_correct = 0
+    top_k_bool = False
     incorrect_top_score = [] # To find images with bad top score grasp
     # For each image in batch
     for i in range(len(detections_list)):
         img_correct_pred = False
+        top_k_bool = False
         # For each pred grasp
-        for j in range(detections_list[i].shape[0]):
+        for j in range(min(detections_list[i].shape[0], top_k)):
             correct_pred = False
             # Create predicted grasp in right format
             pred_grasp_bbox = detections_list[i][j]    # xmin, ymin, xmax, ymax
@@ -283,6 +290,10 @@ if run_dataset:
                     # Top Score
                     if j == 0:
                         top_score_correct += 1
+                    # Top k score
+                    if j < top_k and not top_k_bool:
+                        top_k_bool = True
+                        top_k_correct += 1
             # Get indices of incorrect top scorer grasp
             if j == 0 and not img_correct_pred:
                 incorrect_top_score.append(i)
@@ -291,6 +302,7 @@ if run_dataset:
     # How many images has atleast 1 correct grasp prediction
     grasp_accuracy_img = correct_img_pred_count / len(detections_list)        
     top_score_accuracy_img = top_score_correct / len(detections_list)        
+    top_k_acc_img = top_k_correct / len(detections_list)        
 
     # How many predicted grasps are actually correct out of all predicted grasps
     if (pred_count == 0):
@@ -314,7 +326,8 @@ if run_dataset:
 
     print('Images to check: ', incorrect_top_score)
     print('grasp_acc_img: {:.2f}'.format(grasp_accuracy_img))
-    print('top_score_accuracy: {:.4f}'.format(top_score_accuracy_img))
+    print('top_score_accuracy: {:.4f}'.format(top_score_accuracy_img)) 
+    print('top_k_accuracy: {:.4f} for k = {}'.format(top_k_acc_img, top_k)) 
     print('grasp_accuracy: {:.4f}'.format(grasp_accuracy))
     print('avg_iou: {:.2f}'.format(avg_iou))
     print('avg_angle_diff: {:.2f}'.format(avg_angle_diff))

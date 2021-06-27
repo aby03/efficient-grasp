@@ -141,9 +141,14 @@ def evaluate(
     correct_img_pred_count = 0  # only 1 prediction counted per image
     avg_pred_grasp_score = 0
     top_score_correct = 0
+    # Top k grasps
+    top_k = 5
+    top_k_correct = 0
+    top_k_bool = False
     # For each image in batch
     for i in range(len(all_detections)):
         img_correct_pred = False
+        top_k_bool = False
         # For each pred grasp
         for j in range(all_detections[i].shape[0]):
             correct_pred = False
@@ -185,12 +190,19 @@ def evaluate(
                     # Top Score
                     if j == 0:
                         top_score_correct += 1
+                    # Top k score
+                    if j < top_k and not top_k_bool:
+                        top_k_bool = True
+                        top_k_correct += 1
             
     
  
     # How many images has atleast 1 correct grasp prediction
     grasp_accuracy_img = correct_img_pred_count / len(all_detections)        
+    # Accuracy based on top scorer grasp
     top_score_accuracy_img = top_score_correct / len(all_detections)
+    # Accuracy based on top k grasps
+    top_k_acc_img = top_k_correct / len(all_detections)        
 
     # How many predicted grasps are actually correct out of all predicted grasps
     if (pred_count == 0):
@@ -212,7 +224,7 @@ def evaluate(
     else:
         avg_angle_diff = sum(angle_diff_list) / len(angle_diff_list)
 
-    return grasp_accuracy_img, top_score_accuracy_img, grasp_accuracy, avg_iou, avg_angle_diff, avg_pred_grasp_score
+    return grasp_accuracy_img, top_score_accuracy_img, top_k_acc_img, grasp_accuracy, avg_iou, avg_angle_diff, avg_pred_grasp_score
 
     # ## IoU Angle Diff
     # correct_grasp_count = 0
@@ -335,7 +347,7 @@ class Evaluate(keras.callbacks.Callback):
         # logs = logs or {}
 
         # run evaluation
-        grasp_accuracy_img, top_score_accuracy_img, grasp_accuracy, avg_iou, avg_angle_diff, avg_pred_grasp_score = evaluate(
+        grasp_accuracy_img, top_score_accuracy_img, top_k_acc_img, grasp_accuracy, avg_iou, avg_angle_diff, avg_pred_grasp_score = evaluate(
             self.generator,
             self.active_model,
             iou_threshold=self.iou_threshold, # start
@@ -357,6 +369,10 @@ class Evaluate(keras.callbacks.Callback):
                 summary_value_top_score_acc = summary.value.add()
                 summary_value_top_score_acc.simple_value = top_score_accuracy_img
                 summary_value_top_score_acc.tag = "top_score_accuracy_img"
+                # Grasp Top k grasps by score accuracy
+                summary_value_top_k_acc_img = summary.value.add()
+                summary_value_top_k_acc_img.simple_value = top_k_acc_img
+                summary_value_top_k_acc_img.tag = "top_k_acc_img"
                 # Grasp Accuracy
                 summary_value_grasp_accuracy = summary.value.add()
                 summary_value_grasp_accuracy.simple_value = grasp_accuracy
@@ -378,6 +394,7 @@ class Evaluate(keras.callbacks.Callback):
                 with self.summary_writer.as_default():
                     tf.summary.scalar('grasp_acc_img', grasp_accuracy_img, step=epoch)
                     tf.summary.scalar('top_score_accuracy_img', top_score_accuracy_img, step=epoch)
+                    tf.summary.scalar('top_k_accuracy', top_k_acc_img, step=epoch)
                     tf.summary.scalar('grasp_accuracy', grasp_accuracy, step=epoch)
                     tf.summary.scalar('avg_iou', avg_iou, step=epoch)
                     tf.summary.scalar('avg_angle_diff', avg_angle_diff, step=epoch)
@@ -386,6 +403,7 @@ class Evaluate(keras.callbacks.Callback):
 
         logs['grasp_acc_img'] = grasp_accuracy_img
         logs['top_score_accuracy_img'] = top_score_accuracy_img
+        logs['top_k_accuracy'] = top_k_acc_img
         logs['grasp_accuracy'] = grasp_accuracy
         logs['avg_iou'] = avg_iou
         logs['avg_angle_diff'] = avg_angle_diff
@@ -394,6 +412,7 @@ class Evaluate(keras.callbacks.Callback):
         if self.verbose == 1:
             print('grasp_acc_img: {:.2f}'.format(grasp_accuracy_img))
             print('top_score_accuracy_img: {:.2f}'.format(top_score_accuracy_img))
+            print('top_k_accuracy: {:.2f}'.format(top_k_acc_img))
             print('grasp_accuracy: {:.4f}'.format(grasp_accuracy))
             print('avg_iou: {:.2f}'.format(avg_iou))
             print('avg_angle_diff: {:.2f}'.format(avg_angle_diff))
