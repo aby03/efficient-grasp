@@ -108,7 +108,7 @@ class VMRDDataset(Sequence):
 
         return gtbbs
 
-    def get_rgd(self, idx, rot=0, zoom=1.0, normalise=True):
+    def get_gen_inp_img(self, idx, rot=0, zoom=1.0, normalise=True):
         rgd_img = image.Image.from_file(self.rgd_files[idx])
         self.init_shape = rgd_img.img.shape
 
@@ -133,17 +133,17 @@ class VMRDDataset(Sequence):
             # rgd_img.img = rgd_img.img.transpose((2, 0, 1))
         return rgd_img.img#, scale
 
-    def get_rgb(self, idx, rot=0, zoom=1.0, normalise=True):
-        rgd_img = image.Image.from_file(self.dataset+self.rgd_files[idx].replace('z.png','r.png'))
-        center, left, top = self._get_crop_attrs(idx)
-        rgd_img.rotate(rot, center)
-        rgd_img.crop((top, left), (min(480, top + self.output_size), min(640, left + self.output_size)))
-        rgd_img.zoom(zoom)
-        rgd_img.resize((self.output_size, self.output_size))
-        if normalise:
-            rgd_img.normalise()
-            # rgd_img.img = rgd_img.img.transpose((2, 0, 1))
-        return rgd_img.img
+    # def get_rgb(self, idx, rot=0, zoom=1.0, normalise=True):
+    #     rgd_img = image.Image.from_file(self.dataset+self.rgd_files[idx].replace('z.png','r.png'))
+    #     center, left, top = self._get_crop_attrs(idx)
+    #     rgd_img.rotate(rot, center)
+    #     rgd_img.crop((top, left), (min(480, top + self.output_size), min(640, left + self.output_size)))
+    #     rgd_img.zoom(zoom)
+    #     rgd_img.resize((self.output_size, self.output_size))
+    #     if normalise:
+    #         rgd_img.normalise()
+    #         # rgd_img.img = rgd_img.img.transpose((2, 0, 1))
+    #     return rgd_img.img
 
     @staticmethod
     def load_custom_image(filename, zoom_fac=1.0, output_size=512, normalise=True):
@@ -194,7 +194,7 @@ class VMRDDataset(Sequence):
             else:
                 zoom_factor = 0.875
             # Load image with zoom and rotation
-            rgd_img = self.get_rgd(indexes[i], rot, zoom_factor)
+            rgd_img = self.get_gen_inp_img(indexes[i], rot, zoom_factor)
             # Load bboxes
             gtbb = self.get_gtbb(indexes[i], rot, zoom_factor)
             # Pick all grasps
@@ -252,7 +252,7 @@ class VMRDDataset(Sequence):
             # Zoom Augmentation
             zoom_factor = 0.875
             # Load image with zoom and rotation
-            rgd_img = self.get_rgd(indexes[i], rot, zoom_factor)
+            rgd_img = self.get_gen_inp_img(indexes[i], rot, zoom_factor)
             # Load bboxes
             gtbb = self.get_gtbb(indexes[i], rot, zoom_factor)
             # Pick all grasps
@@ -284,7 +284,7 @@ class VMRDDataset(Sequence):
         # # For every image in batch
         # for i in range(indexes.shape[0]):
         #     # Load image with 1 zoom and 0 rotation
-        #     rgd_img = self.get_rgd(indexes[i], 0, 0.875)
+        #     rgd_img = self.get_gen_inp_img(indexes[i], 0, 0.875)
         #     # Load bboxes
         #     gtbb = self.get_gtbb(indexes[i], 0, 0.875)
         #     # Pick all grasps

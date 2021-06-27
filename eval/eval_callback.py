@@ -220,7 +220,7 @@ def evaluate(
 
     # Avg Angle Diff
     if len(angle_diff_list) == 0:
-        avg_angle_diff = 0
+        avg_angle_diff = 90
     else:
         avg_angle_diff = sum(angle_diff_list) / len(angle_diff_list)
 

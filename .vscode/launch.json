@@ -47,9 +47,9 @@
                       "--weights", "imagenet",
                       // "--weights", "checkpoints/2021_05_28_03_40_07/cornell_best_grasp_accuracy.h5",
                       // "--start-epoch", "100",
-                      "cornell", "/home/aby/Workspace/Cornell/archive",
+                    //   "cornell", "/home/aby/Workspace/Cornell/archive",
                       // "vmrd", "/home/aby/Workspace/vmrd-v2",
-                      // "amazon", "/home/aby/Workspace/parallel-jaw-grasping-dataset/data",
+                      "amazon", "/home/aby/Workspace/parallel-jaw-grasping-dataset/data",
                       "|", "tee", "train_console_out.txt"]
         },
         {

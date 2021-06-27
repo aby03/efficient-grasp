@@ -309,6 +309,19 @@ def create_generators(args):
             valid_data = []
             for line in lines:
                 valid_data.append(line.strip())
+
+        train_generator = AmazonDataset(
+            dataset,
+            train_data,
+            **common_args
+        )
+
+        validation_generator = AmazonDataset(
+            dataset,
+            valid_data,
+            train=False,
+            **common_args
+        )
     elif args.dataset_type == 'vmrd':
         dataset = args.vmrd_path
         with open(dataset+'/ImageSets/Main/trainval.txt', 'r') as filehandle:
