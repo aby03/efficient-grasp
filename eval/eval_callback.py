@@ -163,6 +163,9 @@ def evaluate(
             bbox_pred = pred_grasp.as_bbox
             # Counting total grasp predictions
             pred_count += 1
+
+            min_angle_diff = 90
+            max_iou = 0.0
             # For each true_grasp
             for k in range(all_annotations[i][0]['bboxes'].shape[0]):
                 true_grasp_bbox = all_annotations[i][0]['bboxes'][k]                    # xmin, ymin, xmax, ymax
@@ -171,14 +174,14 @@ def evaluate(
                 # Angle diff
                 angle_diff = np.abs(pred_grasp.as_angle - true_grasp.as_angle) * 180.0 / np.pi
                 angle_diff = min(angle_diff, 180.0 - angle_diff)
-                angle_diff_list.append(angle_diff)
+                min_angle_diff = min(min_angle_diff, angle_diff)
                 #IoU
                 bbox_true = true_grasp.as_bbox
                 try:
                     p1 = Polygon([bbox_true[0], bbox_true[1], bbox_true[2], bbox_true[3], bbox_true[0]])
                     p2 = Polygon([bbox_pred[0], bbox_pred[1], bbox_pred[2], bbox_pred[3], bbox_pred[0]])
                     iou = p1.intersection(p2).area / (p1.area +p2.area -p1.intersection(p2).area)
-                    iou_list.append(iou)
+                    max_iou = max(max_iou, iou)
                 except Exception as e: 
                     print('IoU ERROR', e)
                 if not correct_pred and angle_diff < 30 and iou > iou_threshold:
@@ -194,6 +197,9 @@ def evaluate(
                     if j < top_k and not top_k_bool:
                         top_k_bool = True
                         top_k_correct += 1
+            
+            angle_diff_list.append(min_angle_diff)
+            iou_list.append(max_iou)
             
     
  

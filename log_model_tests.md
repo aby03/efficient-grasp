@@ -208,8 +208,9 @@ Inference Code Results
     avg_angle_diff: 14.55
     avg_pred_grasp_score: 0.49
 
-6. N5. Amazon: 
+6. N5. Amazon: 2021_06_27_22_45_12
     
+
 # A Series:
 RGB Images
 bifpn_widths = (144, 60, 96)   # 144

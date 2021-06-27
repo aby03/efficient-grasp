@@ -20,7 +20,7 @@ class CornellDataset(Sequence):
     """
 
     def __init__(self, dataset_path, list_IDs, phi=0, batch_size=1, output_size=512, n_channels=3,
-                 n_classes=12, shuffle=True, train=True, run_test=False):
+                 n_classes=12, shuffle=True, train=True, run_test=False, rgd_mode=True):
         """
         :param dataset_path: Cornell Dataset directory.
         :param list_IDs: List of the image files for the generator.
@@ -55,8 +55,9 @@ class CornellDataset(Sequence):
         # List of grasp files
         self.grasp_files = [f.replace('z.png', 'cpos.txt') for f in self.rgd_files]
 
-        # FOR RGB IMAGE
-        # self.rgd_files = [f.replace('z.png', 'r.png') for f in self.rgd_files]
+        # FOR RGB IMAGE: Take rgb images if not rgd mode
+        if not rgd_mode:
+            self.rgd_files = [f.replace('z.png', 'r.png') for f in self.rgd_files]
         self.length = len(self.grasp_files)
         if self.length == 0:
             raise FileNotFoundError('No dataset files found. Check path: {}'.format(dataset_path))

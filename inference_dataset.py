@@ -53,21 +53,23 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 # model.load_weights('checkpoints/2021_06_10_03_38_02/cornell_finish.h5', by_name=True) ##301 
 # model.load_weights('checkpoints/2021_06_12_16_37_53/cornell_finish.h5', by_name=True) ##TEST
 
-# prediction_model.load_weights('checkpoints/2021_06_24_02_57_59/vmrd_best_val_loss.h5', by_name=True) ##VMRD
-prediction_model.load_weights('checkpoints/2021_06_23_20_33_49/cornell_finish.h5', by_name=True) ##CORNELL-RGD
-
+prediction_model.load_weights('checkpoints/2021_06_24_02_57_59/vmrd_best_val_loss.h5', by_name=True) ##VMRD
+# prediction_model.load_weights('checkpoints/2021_06_23_20_33_49/cornell_finish.h5', by_name=True) ##CORNELL-RGD
 # prediction_model.load_weights('checkpoints/2021_06_25_18_19_28/cornell_finish.h5', by_name=True) ##CORNELL-RGB N3b 2021_06_25_18_19_28
 print("Weights loaded!")
 
-dataset_name = "cornell"
+dataset_name = "vmrd"
+RGD_DATA = False
 run_dataset = True
-SAVE_FIGURE = False
+SAVE_FIGURE = True
 ### to show all keep Show_plots true and show_selective_plots false
 ### to show select keep both true
-SHOW_PLOTS = False
+SHOW_PLOTS = True
 SHOW_SELECTIVE_PLOTS = False
-# selective_plots = [70, 80, 92, 97, 113, 118, 132] 
+# selective_plots = [70, 80, 92, 97, 113, 118, 132]  # For Cornell-RGD N3
 selective_plots = [50, 59, 72, 84, 89, 105, 113, 118, 148, 162] # For Cornell-RGB N3b
+# FOr VMRD BELOW
+# selective_plots = [1, 6, 8, 9, 20, 21, 25, 27, 40, 48, 50, 56, 59, 61, 65, 69, 71, 73, 75, 76, 77, 80, 81, 82, 89, 91, 92, 97, 105, 110, 115, 116, 118, 119, 127, 131, 133, 140, 142, 157, 159, 160, 161, 165, 169, 172, 177, 181, 192, 195, 196, 200, 217, 218, 222, 223, 232, 245, 247, 251, 252, 268, 304, 312, 325, 326, 353, 364, 365, 366, 369, 388, 408, 414, 424, 427, 429, 431, 436, 443, 467, 474, 476, 511, 572, 614, 633, 657, 658, 669, 698, 745, 818, 821, 851, 853, 854, 906, 916, 946, 956, 957, 969, 971, 1048, 1075, 1088, 1092, 1095, 1106, 1107, 1112, 1114, 1118, 1123, 1128, 1129, 1133, 1142, 1145, 1147, 1149, 1154, 1161, 1172, 1175, 1190, 1198, 1200, 1201, 1202, 1204, 1212, 1235, 1236, 1239, 1240, 1241, 1245, 1246, 1252, 1257, 1259, 1264, 1265, 1270, 1272, 1277, 1281, 1283, 1284, 1287, 1293, 1294, 1296, 1299, 1302, 1305, 1308, 1309, 1316, 1319, 1320, 1324, 1328, 1336, 1339, 1341, 1342, 1345, 1349, 1356, 1361, 1368, 1376, 1381, 1384, 1390, 1392, 1393, 1396, 1398, 1400, 1401, 1406, 1416, 1417, 1419, 1421, 1425, 1426, 1437, 1440, 1447, 1459, 1460, 1461, 1462, 1471, 1480, 1491, 1494, 1519, 1534, 1541, 1547, 1548, 1559, 1566, 1567, 1569, 1571, 1577, 1580, 1582, 1583, 1584, 1586, 1595, 1606, 1608, 1609, 1614, 1615, 1622, 1624, 1629, 1630, 1634, 1640, 1643, 1652, 1657, 1661, 1670, 1672, 1675, 1678, 1679, 1680, 1682, 1684, 1685, 1691, 1693, 1694, 1702, 1703, 1704, 1708, 1717, 1727, 1747, 1774, 1779, 1788, 1793, 1807, 1817, 1819, 1831, 1837, 1855, 1869, 1870, 1871, 1872, 1876, 1878, 1880, 1948, 1959, 1966, 1975, 1988, 1993, 1997, 2010, 2012, 2030, 2036, 2046, 2056, 2073, 2088, 2100, 2104, 2126, 2127, 2128, 2132, 2135, 2136, 2144, 2145, 2146, 2147, 2158, 2159, 2168, 2173, 2178, 2179, 2182, 2188, 2190, 2194, 2201, 2202, 2203, 2214, 2244, 2262, 2280, 2281, 2286, 2292, 2294, 2297, 2298, 2299, 2302, 2304, 2305, 2306, 2307, 2311, 2335, 2348, 2350, 2351, 2357, 2360, 2361, 2362, 2367, 2378, 2383, 2386, 2401, 2416, 2420, 2425, 2441, 2443, 2449, 2462, 2474, 2506, 2507, 2518, 2519, 2558, 2607, 2610, 2612, 2643, 2650, 2652, 2656, 2661, 2666, 2681, 2692, 2695, 2696, 2712, 2736, 2741, 2743, 2744, 2746, 2764, 2769, 2775, 2783, 2822, 2824, 2825, 2826, 2827, 2837, 2839, 2847, 2855, 2859, 2860, 2862, 2865, 2866, 2868, 2871, 2873, 2874, 2875, 2888, 2893, 2894, 2895, 2896, 2900, 2912, 2916, 2917, 2921, 2927, 2929, 2937, 2938, 2947, 2952, 2961, 2964, 2969, 2972, 2977, 2981, 2985, 2988, 2989, 2993, 3000, 3002, 3006, 3013, 3014, 3017, 3018, 3022, 3024, 3025, 3027, 3035, 3040, 3058, 3074, 3094, 3095, 3101, 3106, 3107, 3111, 3115, 3127, 3133, 3166, 3169, 3170, 3181, 3189, 3203, 3226, 3229, 3249, 3276, 3284, 3287, 3322, 3325, 3337, 3338, 3343, 3355, 3357, 3362, 3364, 3367, 3383, 3386, 3392, 3393, 3411, 3421, 3434, 3445, 3461, 3465, 3470, 3472, 3481, 3487, 3495, 3510, 3521, 3559]
 
 if run_dataset:
     if dataset_name == "cornell":
@@ -83,7 +85,8 @@ if run_dataset:
             train_data,
             train=False,
             shuffle=False,
-            batch_size=1
+            batch_size=1,
+            rgd_mode=RGD_DATA
         )
     elif dataset_name == "vmrd":
         dataset = '/home/aby/Workspace/vmrd-v2'
@@ -131,7 +134,10 @@ if run_dataset:
         X, Y_true = val_generator.get_annotation_val(i)
         # disp_img = X[0,:,:,:]
         if dataset_name == "cornell":
-            rgd_img = image.Image.from_file(dataset+train_data[i])
+            if RGD_DATA:
+                rgd_img = image.Image.from_file(dataset+train_data[i])
+            else:
+                rgd_img = image.Image.from_file(dataset+train_data[i].replace('z.png', 'r.png'))
         elif dataset_name == "vmrd":
             rgd_img = image.Image.from_file(dataset+'/JPEGImages/'+train_data[i]+'.jpg')
         else:
@@ -180,7 +186,7 @@ if run_dataset:
         ang_class_list.append(all_angle_class)
         true_label_list.append(Y_true)
 
-        if SHOW_PLOTS:
+        if SHOW_PLOTS and all_score.shape[0] > 0:
             if SHOW_SELECTIVE_PLOTS and i not in selective_plots:
                 continue
             DISPLAY_PRED = 100
@@ -191,7 +197,7 @@ if run_dataset:
             ax[0][0].imshow(disp_img)
             ax[0][0].set_title('Original RGD Image')
             ## Show RGD image and set axis title
-            ax[0][1].imshow(X[0,:,:,:])
+            ax[0][1].imshow(disp_img)
             ax[0][1].set_title('Labelled Grasps on RGD Image')
             ax[1][0].imshow(disp_img)
             ax[1][0].set_title('Predicted Grasps with score')
@@ -250,7 +256,8 @@ if run_dataset:
         img_correct_pred = False
         top_k_bool = False
         # For each pred grasp
-        for j in range(min(detections_list[i].shape[0], top_k)):
+        # for j in range(min(detections_list[i].shape[0], top_k)):
+        for j in range(detections_list[i].shape[0]):
             correct_pred = False
             # Create predicted grasp in right format
             pred_grasp_bbox = detections_list[i][j]    # xmin, ymin, xmax, ymax
@@ -263,6 +270,9 @@ if run_dataset:
             bbox_pred = pred_grasp.as_bbox
             # Counting total grasp predictions
             pred_count += 1
+
+            min_angle_diff = 90
+            max_iou = 0.0
             # For each true_grasp
             for k in range(true_label_list[i][0]['bboxes'].shape[0]):
                 true_grasp_bbox = true_label_list[i][0]['bboxes'][k]                    # xmin, ymin, xmax, ymax
@@ -271,14 +281,14 @@ if run_dataset:
                 # Angle diff
                 angle_diff = np.abs(pred_grasp.as_angle - true_grasp.as_angle) * 180.0 / np.pi
                 angle_diff = min(angle_diff, 180.0 - angle_diff)
-                angle_diff_list.append(angle_diff)
+                min_angle_diff = min(min_angle_diff, angle_diff)
                 #IoU
                 bbox_true = true_grasp.as_bbox
                 try:
                     p1 = Polygon([bbox_true[0], bbox_true[1], bbox_true[2], bbox_true[3], bbox_true[0]])
                     p2 = Polygon([bbox_pred[0], bbox_pred[1], bbox_pred[2], bbox_pred[3], bbox_pred[0]])
                     iou = p1.intersection(p2).area / (p1.area +p2.area -p1.intersection(p2).area)
-                    iou_list.append(iou)
+                    max_iou = max(max_iou, iou)
                 except Exception as e: 
                     print('IoU ERROR', e)
                 if not correct_pred and angle_diff < 30 and iou > iou_threshold:
@@ -294,6 +304,11 @@ if run_dataset:
                     if j < top_k and not top_k_bool:
                         top_k_bool = True
                         top_k_correct += 1
+            
+            # Get angle diff and IoU for the pred grasp
+            angle_diff_list.append(min_angle_diff)
+            iou_list.append(max_iou)
+            
             # Get indices of incorrect top scorer grasp
             if j == 0 and not img_correct_pred:
                 incorrect_top_score.append(i)
