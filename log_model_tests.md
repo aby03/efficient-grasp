@@ -209,7 +209,24 @@ Inference Code Results
     avg_pred_grasp_score: 0.49
 
 6. N5. Amazon: 2021_06_27_22_45_12
-    
+    --- inference best val loss ---
+    Images to check:  [9, 16, 21, 24, 31, 33, 42, 44, 48, 58, 60, 63]
+    grasp_acc_img: 0.68
+    top_score_accuracy: 0.6176
+    top_k_accuracy: 0.6765 for k = 5
+    grasp_accuracy: 0.7966
+    avg_iou: 0.51
+    avg_angle_diff: 2.85
+    avg_pred_grasp_score: 0.42
+    --- (CHOSEN) inference finish ---
+    Images to check:  [14, 16, 20, 21, 23, 24, 25, 27, 28, 29, 31, 33, 35, 42, 43, 53, 57, 59, 63]
+    grasp_acc_img: 0.87
+    top_score_accuracy: 0.6765
+    top_k_accuracy: 0.8382 for k = 5
+    grasp_accuracy: 0.6480
+    avg_iou: 0.44
+    avg_angle_diff: 6.22
+    avg_pred_grasp_score: 0.58
 
 # A Series:
 RGB Images

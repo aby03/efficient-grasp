@@ -53,12 +53,15 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 # model.load_weights('checkpoints/2021_06_10_03_38_02/cornell_finish.h5', by_name=True) ##301 
 # model.load_weights('checkpoints/2021_06_12_16_37_53/cornell_finish.h5', by_name=True) ##TEST
 
-prediction_model.load_weights('checkpoints/2021_06_24_02_57_59/vmrd_best_val_loss.h5', by_name=True) ##VMRD
+# prediction_model.load_weights('checkpoints/2021_06_24_02_57_59/vmrd_best_val_loss.h5', by_name=True) ##VMRD
 # prediction_model.load_weights('checkpoints/2021_06_23_20_33_49/cornell_finish.h5', by_name=True) ##CORNELL-RGD
 # prediction_model.load_weights('checkpoints/2021_06_25_18_19_28/cornell_finish.h5', by_name=True) ##CORNELL-RGB N3b 2021_06_25_18_19_28
+# prediction_model.load_weights('checkpoints/2021_06_27_22_45_12/amazon_best_val_loss.h5', by_name=True) ##Amazon
+prediction_model.load_weights('checkpoints/2021_06_27_22_45_12/amazon_finish.h5', by_name=True) ##Amazon
+
 print("Weights loaded!")
 
-dataset_name = "vmrd"
+dataset_name = "amazon" # Values can be [cornell, vmrd, amazon]
 RGD_DATA = False
 run_dataset = True
 SAVE_FIGURE = True
