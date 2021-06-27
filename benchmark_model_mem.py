@@ -20,7 +20,7 @@ allow_gpu_growth_memory()
 from model_multi import build_EfficientGrasp_multi
 
 # Calculate Memory
-def keras_model_memory_usage_in_bytes(model, *, batch_size: int):
+def keras_model_memory_usage_in_bytes(model, batch_size):
     """
     Return the estimated memory usage of a given Keras model in bytes.
     This includes the model weights and layers, but excludes the dataset.
@@ -45,6 +45,7 @@ def keras_model_memory_usage_in_bytes(model, *, batch_size: int):
                 layer, batch_size=batch_size
             )
         single_layer_mem = tf.as_dtype(layer.dtype or default_dtype).size
+        print(layer.name)
         out_shape = layer.output_shape
         if isinstance(out_shape, list):
             out_shape = out_shape[0]

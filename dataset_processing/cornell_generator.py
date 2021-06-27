@@ -56,7 +56,7 @@ class CornellDataset(Sequence):
         self.grasp_files = [f.replace('z.png', 'cpos.txt') for f in self.rgd_files]
 
         # FOR RGB IMAGE
-        # self.rgd_files = [f.replace('z.png', 'r.png') for f in self.rgd_files]
+        self.rgd_files = [f.replace('z.png', 'r.png') for f in self.rgd_files]
         self.length = len(self.grasp_files)
         if self.length == 0:
             raise FileNotFoundError('No dataset files found. Check path: {}'.format(dataset_path))

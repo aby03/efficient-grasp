@@ -146,7 +146,7 @@ multi model params modified
         avg_pred_grasp_score: 0.59
 
 3. N3: 2021_06_23_20_33_49
-    RGD IMAGES
+    RGD IMAGES: train_1, valid_1
     grasp bbox snapping to closest horizontal box by angle
     Total detected grasps:  324
     grasp_acc_img: 0.62
@@ -176,6 +176,19 @@ multi model params modified
     avg_iou: 0.02
     avg_angle_diff: 16.54
     avg_pred_grasp_score: 0.37
+
+5. N3b: 2021_06_25_18_19_28
+CORNELL RGB IMAGES
+    LR: 1e-4, patience 5, cd 0, 150 epochs
+    loss: 0.8085 - angle_classification_loss: 0.3031 - bbox_regression_loss: 0.1685 - val_loss: 1.3414 - val_angle_classification_loss: 0.4644 - val_bbox_regression_loss: 0.2923
+    Total detected grasps:  1019
+    grasp_acc_img: 0.97
+    top_score_accuracy_img: 0.75
+    grasp_accuracy: 0.6222
+    avg_iou: 0.16
+    avg_angle_diff: 16.25
+    avg_pred_grasp_score: 0.46
+
 # A Series:
 RGB Images
 bifpn_widths = (144, 60, 96)   # 144
