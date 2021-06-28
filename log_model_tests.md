@@ -228,6 +228,8 @@ Inference Code Results
     avg_angle_diff: 6.22
     avg_pred_grasp_score: 0.58
 
+7. N3c: Cornell: 
+    LIGHTER MODEL
 # A Series:
 RGB Images
 bifpn_widths = (144, 60, 96)   # 144
