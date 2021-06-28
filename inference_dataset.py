@@ -53,21 +53,26 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 # model.load_weights('checkpoints/2021_06_10_03_38_02/cornell_finish.h5', by_name=True) ##301 
 # model.load_weights('checkpoints/2021_06_12_16_37_53/cornell_finish.h5', by_name=True) ##TEST
 
+### MAIN
 # prediction_model.load_weights('checkpoints/2021_06_24_02_57_59/vmrd_best_val_loss.h5', by_name=True) ##VMRD
 # prediction_model.load_weights('checkpoints/2021_06_23_20_33_49/cornell_finish.h5', by_name=True) ##CORNELL-RGD
 # prediction_model.load_weights('checkpoints/2021_06_25_18_19_28/cornell_finish.h5', by_name=True) ##CORNELL-RGB N3b 2021_06_25_18_19_28
 # prediction_model.load_weights('checkpoints/2021_06_27_22_45_12/amazon_best_val_loss.h5', by_name=True) ##Amazon
-prediction_model.load_weights('checkpoints/2021_06_27_22_45_12/amazon_finish.h5', by_name=True) ##Amazon
+# prediction_model.load_weights('checkpoints/2021_06_27_22_45_12/amazon_finish.h5', by_name=True) ##Amazon 
+
+# Different Model
+prediction_model.load_weights('checkpoints/2021_06_28_01_56_08/cornell_finish.h5', by_name=True) ##Cornell Light 2021_06_28_01_56_08
+
 
 print("Weights loaded!")
 
-dataset_name = "amazon" # Values can be [cornell, vmrd, amazon]
+dataset_name = "cornell" # Values can be [cornell, vmrd, amazon]
 RGD_DATA = False
 run_dataset = True
 SAVE_FIGURE = True
 ### to show all keep Show_plots true and show_selective_plots false
 ### to show select keep both true
-SHOW_PLOTS = True
+SHOW_PLOTS = False
 SHOW_SELECTIVE_PLOTS = False
 # selective_plots = [70, 80, 92, 97, 113, 118, 132]  # For Cornell-RGD N3
 selective_plots = [50, 59, 72, 84, 89, 105, 113, 118, 148, 162] # For Cornell-RGB N3b

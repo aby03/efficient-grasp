@@ -29,12 +29,22 @@ def get_scaled_parameters_multi(phi):
     #info tuples with scalable parameters
     image_sizes = (512, 640, 768, 896, 1024, 1280, 1408)
 
+    ## MAIN MODEL
     bifpn_widths = (144, 64, 96)   # 144
     bifpn_depths = (3, 3, 3, 3)                # 3
     subnet_depths = (3, 3, 4)               # 4
     subnet_width = (96, 32, 48)    # 96
     subnet_iteration_steps = (2, 1, 2)      # 2
     num_groups_gn = (6, 2, 3)           # 6  #try to get 16 channels per group ## width > groups * 16 
+
+    # ## LIGHTER MODEL
+    # bifpn_widths = (64, 96)   # 144
+    # bifpn_depths = (3, 3, 3)                # 3
+    # subnet_depths = (3, 4)               # 4
+    # subnet_width = (32, 48)    # 96
+    # subnet_iteration_steps = (1, 2)      # 2
+    # num_groups_gn = (2, 3)           # 6  #try to get 16 channels per group ## width > groups * 16 
+
 
     # bifpn_widths = (64, 88, 112, 160, 224, 288, 384)
     # bifpn_depths = (3, 4, 5, 6, 7, 7, 8)
@@ -166,17 +176,17 @@ def build_EfficientGrasp_multi(phi,
         # 227, 329, 329, 374, 464, 566, 656 -> based on EfficientNet chosen. 227 for B0
         
         ## Train Arch
-        # for i in range(1, 227):
-        #     efficientgrasp_train.layers[i].trainable = False
-        # efficientgrasp_train.summary()
-        # print(efficientgrasp_train.layers[-2].output_shape)
-        # print(efficientgrasp_train.layers[-1].output_shape)
-        
-        ## Prediction Arch
         for i in range(1, 227):
-            efficientgrasp_prediction.layers[i].trainable = False
-        efficientgrasp_prediction.summary()
-        print(efficientgrasp_prediction.layers[-1].output_shape)
+            efficientgrasp_train.layers[i].trainable = False
+        efficientgrasp_train.summary()
+        print(efficientgrasp_train.layers[-2].output_shape)
+        print(efficientgrasp_train.layers[-1].output_shape)
+        
+        # ## Prediction Arch
+        # for i in range(1, 227):
+        #     efficientgrasp_prediction.layers[i].trainable = False
+        # efficientgrasp_prediction.summary()
+        # print(efficientgrasp_prediction.layers[-1].output_shape)
     # Return Model
     return efficientgrasp_train, efficientgrasp_prediction, all_layers
 

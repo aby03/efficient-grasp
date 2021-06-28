@@ -124,7 +124,12 @@ Multi model, Cornell
 Only grasp loss, no score loss
 multi model params modified
 
-# Anchor Series
+# Anchor (N) Series
+Model Size:
+Total params: 4,472,045
+Trainable params: 837,201
+Non-trainable params: 3,634,844
+
 1. N1: 2021_06_22_20_57_00
     loss ratio: 1:1
     lr schedule: patience 5 cooldown 5
@@ -228,8 +233,22 @@ Inference Code Results
     avg_angle_diff: 6.22
     avg_pred_grasp_score: 0.58
 
-7. N3c: Cornell: 
-    LIGHTER MODEL
+7. N3c: Cornell: 2021_06_28_01_56_08
+    LIGHTER MODEL, RGD images
+    --- Inference ---
+    Images to check:  [4, 19, 23, 62, 70, 90, 92, 94, 97, 105, 108, 118, 125, 126, 127, 138, 139, 141, 166]
+    grasp_acc_img: 0.92
+    top_score_accuracy: 0.8644
+    top_k_accuracy: 0.9209 for k = 5
+    grasp_accuracy: 0.8192
+    avg_iou: 0.48
+    avg_angle_diff: 3.51
+    avg_pred_grasp_score: 0.41
+    --- Model Chars ---
+    Total params: 3,853,421
+    Trainable params: 218,577
+    Non-trainable params: 3,634,844
+
 # A Series:
 RGB Images
 bifpn_widths = (144, 60, 96)   # 144
