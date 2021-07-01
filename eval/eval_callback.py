@@ -174,16 +174,19 @@ def evaluate(
                 # Angle diff
                 angle_diff = np.abs(pred_grasp.as_angle - true_grasp.as_angle) * 180.0 / np.pi
                 angle_diff = min(angle_diff, 180.0 - angle_diff)
-                min_angle_diff = min(min_angle_diff, angle_diff)
+                # min_angle_diff = min(min_angle_diff, angle_diff) # Problem: angle diff, IoU are optimized for different labelled grasps instead of same
                 #IoU
                 bbox_true = true_grasp.as_bbox
                 try:
                     p1 = Polygon([bbox_true[0], bbox_true[1], bbox_true[2], bbox_true[3], bbox_true[0]])
                     p2 = Polygon([bbox_pred[0], bbox_pred[1], bbox_pred[2], bbox_pred[3], bbox_pred[0]])
                     iou = p1.intersection(p2).area / (p1.area +p2.area -p1.intersection(p2).area)
-                    max_iou = max(max_iou, iou)
+                    # max_iou = max(max_iou, iou)
                 except Exception as e: 
                     print('IoU ERROR', e)
+                max_iou = max(max_iou, iou)
+                if iou > 0.25:
+                    min_angle_diff = min(min_angle_diff, angle_diff) # Problem: angle diff, IoU are optimized for different labelled grasps instead of same
                 if not correct_pred and angle_diff < 30 and iou > iou_threshold:
                     if not img_correct_pred:
                         img_correct_pred = True
