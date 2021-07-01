@@ -34,9 +34,19 @@ EfficientGrasp model based on EfficientPose and EfficientDet to identify robotic
     > python train.py --phi 0 --batch-size 1 --lr 1e-4 --weights imagenet cornell /home/aby/Workspace/MTP/Datasets/Cornell/archive
 
 ## Run Prediction
+1. Set model and dataset or custom images to run inference on in inference_dataset.py
 
+2a. VSCode
+    
+    a. Go to inference_dataset.py
 
-## Ros commands
+    b. Press F5 or Ctrl-F5
+
+2b. Terminal
+
+    > python inference_dataset.py
+
+<!-- ## Ros commands
 
 ### Create Package
 1. > cd ros-grasp/src
@@ -55,4 +65,4 @@ EfficientGrasp model based on EfficientPose and EfficientDet to identify robotic
 ### Building package
 1. cd ros-grasp     (CATKIN WS FOLDER)
 2. catkin_make
-3. source devel/setup.bash
+3. source devel/setup.bash -->
