@@ -1,5 +1,5 @@
 # efficient-grasp
-EfficientGrasp model based on EfficientPose and EfficientDet to identify robotic grasps.
+EfficientGrasp model based on EfficientPose and EfficientDet to identify robotic grasps. ROS simulation included.
 
 ## Pre-requisuite
 1. Ubuntu 20.04
@@ -7,17 +7,52 @@ EfficientGrasp model based on EfficientPose and EfficientDet to identify robotic
 2. CUDA (11.4 installed using deb installer)
 > https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#runfile
 
-3. miniconda or anaconda
+3. miniconda
+
+## Installation (with ROS)
+1. Create conda environment and install ros(source: https://github.com/RoboStack/ros-noetic)
+> conda create -n effgrasp-ros python=3.8  
+> conda activate effgrasp-ros  
+> conda config --env --add channels conda-forge  
+> conda config --env --add channels robostack  
+> conda config --env --set channel_priority strict  
+> conda install ros-noetic-desktop  
+> conda install compilers cmake pkg-config make ninja  
+> conda install catkin_tools
+> rosdep init  s
+> rosdep update  
+
+2. Create catkin workspace for ros packages (named: effgrasp_ros).
+> mkdir -p ~/Workspace/MTP/effgrasp_ros/src  
+> cd ~/Workspace/MTP/effgrasp_ros
+> catkin_make  
+
+3. Source ros environment over current environment. (Do this step after building each new ros package)
+> cd ~/Workspace/MTP/effgrasp_ros  
+> source devel/setup.bash
+
+4. Clone efficient-grasp
+> cd ~/Workspace/MTP  
+> git clone https://github.com/aby03/efficient-grasp  
+
+5. Install efficient-grasp dependencies
+> conda install tensorflow-gpu  
+> conda install cudatoolkit=10.1.243 cudnn=7.6.5
+> conda install -c conda-forge opencv matplotlib imageio keras-applications tqdm shapely  
+> conda install scikit-image 
+> conda install cython
 ## Installation
 1. Clone and move into repository directory.
-> git clone https://github.com/aby03/efficient-grasp/tree/main  
+> git clone https://github.com/aby03/efficient-grasp  
 > cd efficient-grasp
 
-2. Create conda environment and "efficient-grasp" and install dependencies.
+2. Create conda environment and "effgrasp-ros" and install dependencies.
 > conda env create --file environment.yml  
 > conda activate efficient-grasp
 
 
+##### TO DO: conda env update --file environment.yml
+##### ROS path: /home/aby03/miniconda3/envs/effgrasp-ros/etc/ros/
 2. (Alternate: Do this in place of above if you want to install each dependency manually)  
 Create new conda environment and install the dependencies.
 > conda create --name efficient-grasp  

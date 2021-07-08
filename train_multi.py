@@ -20,7 +20,11 @@ import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # or any {'0', '1', '2'}
 
+from tensorflow.python.client import device_lib
+print(device_lib.list_local_devices())
+
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
+print(physical_devices)
 assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
 config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
@@ -235,8 +239,8 @@ def main(args = None):
     print("\nStarting Training!\n")
     history = model.fit_generator(
         generator = train_generator,
-        # steps_per_epoch = 2,
-        steps_per_epoch = len(train_generator),
+        steps_per_epoch = 2,
+        # steps_per_epoch = len(train_generator),
         initial_epoch = args.start_epoch,
         epochs = args.epochs,
         # epochs = 1,
