@@ -24,6 +24,29 @@ cos_mean = GRASP_MEAN[3]
 h_mean = GRASP_MEAN[4]
 w_mean = GRASP_MEAN[5]
 
+def get_grasp_from_pred(pred_grasp_bbox, pred_grasp_angle_class):
+    pred_grasp_angle = (np.pi / 12) * pred_grasp_angle_class - np.pi/2      # angle in radian
+    # if not (pred_grasp_angle_class > 3 and pred_grasp_angle_class < 9):
+    #     pred_grasp_angle = -( np.pi / 2 - pred_grasp_angle)
+    #     pred_grasp = [
+    #                     (pred_grasp_bbox[0] + pred_grasp_bbox[2]) / 2,      # x
+    #                     (pred_grasp_bbox[1] + pred_grasp_bbox[3]) / 2,      # y
+    #                     pred_grasp_angle,                                   # theta
+    #                     (pred_grasp_bbox[3] - pred_grasp_bbox[1]),       # w
+    #                     (pred_grasp_bbox[2] - pred_grasp_bbox[0])      # h
+    #                 ]
+    # else:
+    pred_grasp = [
+                    (pred_grasp_bbox[0] + pred_grasp_bbox[2]) / 2,      # x
+                    (pred_grasp_bbox[1] + pred_grasp_bbox[3]) / 2,      # y
+                    pred_grasp_angle,                                   # theta
+                    (pred_grasp_bbox[2] - pred_grasp_bbox[0]),      # h
+                    (pred_grasp_bbox[3] - pred_grasp_bbox[1])       # w
+                ]
+    # y, x, theta, h, w
+    pred_grasp_obj = Grasp((pred_grasp[1], pred_grasp[0]), *pred_grasp[2:])
+    return pred_grasp_obj
+
 def _gr_text_to_no(l, offset=(0, 0)):
     """
     Transform a single point from a Cornell file line to a pair of ints.
@@ -335,11 +358,18 @@ class GraspRectangle:
         return (np.arctan2(-dy, dx) + np.pi / 2) % np.pi - np.pi / 2
 
     @property
+    def as_five_vec(self):
+        '''
+        center: [y, x] format
+        '''
+        return [*self.center, self.angle, self.length, self.width]
+
+    @property
     def as_grasp(self):
         """
         :return: GraspRectangle converted to a Grasp
         """
-        return Grasp(self.center, np.sin(self.angle), np.cos(self.angle), length=self.length, width=self.width)
+        return Grasp(self.center, self.angle, self.length, self.width)
 
     @property
     def center(self):
@@ -490,26 +520,27 @@ class Grasp:
     A Grasp represented by a center pixel, rotation angle and gripper width (length)
     """
 
-    def __init__(self, center, sin_t, cos_t, length=60, width=30, quality=-1, unnorm=False):
-        # Unnormalize coords first if values coming from prediction
-        if unnorm:
-            center, sin_t, cos_t, length, width = self.unnormalize(center, sin_t, cos_t, length, width)
-        
+    def __init__(self, center, angle, length, width, quality=-1, unnorm=False):
         # Assign Values
         self.center = center    # in [y, x] format
-        # self.angle = angle  # Positive angle means rotate anti-clockwise from horizontal.
-        self.quality = quality
-        self.length = length
-        self.width = width
 
-        # Apply sin cos constraint
-        if abs(sin_t**2 + cos_t**2 - 1) > 1e-4:
-            norm_fact = (sin_t**2 + cos_t**2)**0.5
-            self.sin_t = sin_t / norm_fact
-            self.cos_t = cos_t / norm_fact
-        else:
-            self.sin_t = sin_t
-            self.cos_t = cos_t
+        self.angle = angle
+        self.quality = quality
+        self.length = float(length)
+        self.width = float(width)
+
+        # ### Make Rotation less than 45 degree
+        if self.angle > np.pi / 4 or self.angle < - np.pi / 4:
+            self.angle = -( np.pi / 2 - self.angle)
+            # Swap L, W
+            self.length = float(width)
+            self.width = float(length)
+
+        self.sin_t = np.sin(self.angle)
+        self.cos_t = np.cos(self.angle)
+        # print('F: C-{} A-{} L-{} W-{} S-{} C-{}'.format(self.center, self.angle, self.length, self.width, self.sin_t, self.cos_t))
+
+
 
     def unnormalize(self, center, sin_t, cos_t, h, w):
         center[0] = center[0] * y_std + y_mean
@@ -528,6 +559,10 @@ class Grasp:
         h = (h - h_mean) / h_std
         w = (w - w_mean) / w_std
         return center, sin_t, cos_t, h, w
+
+    @property
+    def as_angle(self):
+        return self.angle
 
     @property
     def as_list(self):
@@ -556,6 +591,32 @@ class Grasp:
                     [x2 - self.width / 2 * yo, y2 - self.width / 2 * xo],
                     [x2 + self.width / 2 * yo, y2 + self.width / 2 * xo],
                     [x1 + self.width / 2 * yo, y1 + self.width / 2 * xo],
+                ]
+    
+    @property
+    def as_horizontal_bbox(self):
+        """
+        Convert to list of bboxes
+        :return: list of points in [x1(min), y1(min), x2(max), y2(max)]
+        """
+        # if not abs(self.angle) <= np.pi/4:
+        # xo = 1 #self.cos_t
+        # yo = 0 #self.sin_t
+        # else:
+        #     xo = 0 #self.cos_t
+        #     yo = 1 #self.sin_t
+
+        # y1 = self.center[0] + self.length / 2 * yo
+        # x1 = self.center[1] - self.length / 2 * xo
+        # y2 = self.center[0] - self.length / 2 * yo
+        # x2 = self.center[1] + self.length / 2 * xo
+        # return [
+        #         x1 - self.width / 2 * yo, y1 - self.width / 2 * xo,
+        #         x2 + self.width / 2 * yo, y2 + self.width / 2 * xo,
+        #        ]
+        return  [
+                    self.center[1] - self.length / 2, self.center[0] - self.width / 2,
+                    self.center[1] + self.length / 2, self.center[0] + self.width / 2,
                 ]
 
     @property

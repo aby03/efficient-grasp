@@ -1,6 +1,10 @@
 
 # python train_multi.py --phi 0 --batch-size 1 --lr 1e-4 --epochs 200 --no-snapshots --weights imagenet cornell /kaggle/input/cornell-preprocessed/Cornell/archive
 
+# Starting training timer
+from datetime import datetime
+start_time = datetime.now()
+
 import argparse
 import sys
 import time
@@ -27,7 +31,7 @@ os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
 from model_multi import build_EfficientGrasp_multi
 from tensorflow import keras
 from tensorflow.keras.optimizers import Adam
-from losses import grasp_loss_multi
+from losses import focal, smooth_l1, grasp_loss_multi
 from custom_load_weights import custom_load_weights
 from efficientnet import BASE_WEIGHTS_PATH, WEIGHTS_HASHES
 
@@ -105,6 +109,8 @@ def main(args = None):
 
     print("\nBuilding Model!\n")
     model, prediction_model, all_layers = build_EfficientGrasp_multi(args.phi,
+                                score_threshold = 0.3,
+                                num_classes=12,
                                 print_architecture=False)
 
     # load pretrained weights
@@ -130,13 +136,20 @@ def main(args = None):
             model.layers[i].trainable = False
 
     print("\nCompiling Model!\n")
-    model.compile(  
-                    optimizer=Adam(lr = args.lr, clipnorm = 0.001),
-                    loss={'regression_out': grasp_loss_multi(args.batch_size),
-                        #   'regression_score' score_loss_multi(),
-                         }
-                    # metric=['grasp_accuracy']
-                 )
+    # model.compile(  
+    #                 optimizer=Adam(lr = args.lr, clipnorm = 0.001),
+    #                 loss={'regression_out': grasp_loss_multi(args.batch_size),
+    #                     #   'regression_score' score_loss_multi(),
+    #                      }
+    #                 # metric=['grasp_accuracy']
+    #              )
+    model.compile(optimizer=Adam(lr = args.lr, clipnorm = 0.001), 
+                  loss={'bbox_regression': smooth_l1(),
+                        'angle_classification': focal(),
+                        },
+                  loss_weights = {'bbox_regression' : 3.0,
+                                  'angle_classification': 1.0
+                                 })
 
     # create the callbacks
     callbacks = create_callbacks(
@@ -231,13 +244,17 @@ def main(args = None):
         callbacks = callbacks,
         workers = args.workers,
         use_multiprocessing = args.multiprocessing,
-        max_queue_size = args.max_queue_size#,
-        # validation_data = validation_generator
+        max_queue_size = args.max_queue_size,
+        validation_data = validation_generator
     )
     print("\nTraining Complete! Saving...\n")
     os.makedirs(args.snapshot_path, exist_ok = True)
     # NOT WORKING
     model.save_weights(os.path.join(args.snapshot_path, '{dataset_type}_finish.h5'.format(dataset_type = args.dataset_type)))
+
+    # Calculating Training time
+    end_time = datetime.now()
+    print('Training Duration: {}'.format(end_time - start_time))
     print("\nEnd of Code...\n")
     
 
@@ -251,6 +268,7 @@ def create_generators(args):
         The training and validation generators.
     """
     common_args = {
+        'n_classes': 12,
         'batch_size': args.batch_size,
         'phi': args.phi,
     }
@@ -291,6 +309,19 @@ def create_generators(args):
             valid_data = []
             for line in lines:
                 valid_data.append(line.strip())
+
+        train_generator = AmazonDataset(
+            dataset,
+            train_data,
+            **common_args
+        )
+
+        validation_generator = AmazonDataset(
+            dataset,
+            valid_data,
+            train=False,
+            **common_args
+        )
     elif args.dataset_type == 'vmrd':
         dataset = args.vmrd_path
         with open(dataset+'/ImageSets/Main/trainval.txt', 'r') as filehandle:
@@ -344,8 +375,10 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
         snapshot_path = args.snapshot_path
         # save_path = args.validation_image_save_path
         tensorboard_dir = args.tensorboard_dir
-        metric_to_monitor = "grasp_accuracy"
-        mode = "max"
+        metric_to_monitor = "val_loss"
+        mode = "min"
+        # metric_to_monitor = "grasp_accuracy"
+        # mode = "max"
     else:
         snapshot_path = args.snapshot_path
         # save_path = args.validation_image_save_path
@@ -382,7 +415,7 @@ def create_callbacks(training_model, prediction_model, validation_generator, arg
         verbose    = 1,
         mode       = 'min',
         min_delta  = 0.0001,
-        cooldown   = 5,
+        cooldown   = 0,
         min_lr     = 1e-7
     ))
     
