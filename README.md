@@ -8,21 +8,26 @@ EfficientGrasp model based on EfficientPose and EfficientDet to identify robotic
 
 > https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#runfile
 
-3. Install libcudnn8
+3. Install miniconda. 
 
-4. Install miniconda. Create new conda environment.
-> conda create --name efficient-grasp
+4. (Import from yml file) Use the following commands to create conda environemnt.
+> conda env create --file environment.yml  \
 > conda activate efficient-grasp
-> conda install tensorflow-gpu
-> conda install -c conda-forge opencv
-> conda install -c conda-forge matplotlib
-> conda install -c conda-forge imageio
-> conda install -c anaconda scikit-image 
-> conda install -c conda-forge keras-applications
-> conda install -c conda-forge tqdm 
+
+
+4. (Alternate: Installing each dependency manually)Create new conda environment using the following commands.
+> conda create --name efficient-grasp   \
+> conda activate efficient-grasp    \
+> conda install tensorflow-gpu  \
+> conda install -c conda-forge opencv   \
+> conda install -c conda-forge matplotlib   \
+> conda install -c conda-forge imageio  \
+> conda install -c anaconda scikit-image    \
+> conda install -c conda-forge keras-applications   \
+> conda install -c conda-forge tqdm     \
 > conda install -c conda-forge shapely
 
-4. (Alternate) Unpack conda environment following this: https://www.anaconda.com/blog/moving-conda-environments
+<!-- 4. (Alternate) Unpack conda environment following this: https://www.anaconda.com/blog/moving-conda-environments -->
 
 ### Anchors
 1. To compile compute_overlap 
