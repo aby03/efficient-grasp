@@ -11,20 +11,20 @@ EfficientGrasp model based on EfficientPose and EfficientDet to identify robotic
 3. Install miniconda. 
 
 4. (Import from yml file) Use the following commands to create conda environemnt.
-> conda env create --file environment.yml  \
+> conda env create --file environment.yml  
 > conda activate efficient-grasp
 
 
 4. (Alternate: Installing each dependency manually)Create new conda environment using the following commands.
-> conda create --name efficient-grasp   \
-> conda activate efficient-grasp    \
-> conda install tensorflow-gpu  \
-> conda install -c conda-forge opencv   \
-> conda install -c conda-forge matplotlib   \
-> conda install -c conda-forge imageio  \
-> conda install -c anaconda scikit-image    \
-> conda install -c conda-forge keras-applications   \
-> conda install -c conda-forge tqdm     \
+> conda create --name efficient-grasp  
+> conda activate efficient-grasp  
+> conda install tensorflow-gpu  
+> conda install -c conda-forge opencv   
+> conda install -c conda-forge matplotlib   
+> conda install -c conda-forge imageio  
+> conda install -c anaconda scikit-image    
+> conda install -c conda-forge keras-applications   
+> conda install -c conda-forge tqdm     
 > conda install -c conda-forge shapely
 
 <!-- 4. (Alternate) Unpack conda environment following this: https://www.anaconda.com/blog/moving-conda-environments -->
