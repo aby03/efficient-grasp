@@ -63,17 +63,20 @@ model, prediction_model, all_layers = build_EfficientGrasp_multi(0,
 # Different Model
 # prediction_model.load_weights('checkpoints/2021_06_28_01_56_08/cornell_finish.h5', by_name=True) ##Cornell Light 2021_06_28_01_56_08
 
-prediction_model.load_weights('checkpoints/2021_06_30_19_01_35/vmrd_best_val_loss.h5', by_name=True) ##VMRD
+# prediction_model.load_weights('checkpoints/2021_06_30_19_01_35/vmrd_best_val_loss.h5', by_name=True) ##VMRD
+
+### New Setup
+prediction_model.load_weights('checkpoints/2021_07_08_06_34_47/cornell_best_val_loss.h5', by_name=True)
 
 print("Weights loaded!")
 
-dataset_name = "vmrd" # Values can be [cornell, vmrd, amazon]
+dataset_name = "cornell" # Values can be [cornell, vmrd, amazon]
 RGD_DATA = True
 run_dataset = True
 SAVE_FIGURE = True
 ### to show all keep Show_plots true and show_selective_plots false
 ### to show select keep both true
-SHOW_PLOTS = False
+SHOW_PLOTS = True
 SHOW_SELECTIVE_PLOTS = False
 # selective_plots = [70, 80, 92, 97, 113, 118, 132]  # For Cornell-RGD N3
 selective_plots = [50, 59, 72, 84, 89, 105, 113, 118, 148, 162] # For Cornell-RGB N3b
@@ -83,7 +86,7 @@ selective_plots = [50, 59, 72, 84, 89, 105, 113, 118, 148, 162] # For Cornell-RG
 if run_dataset:
     if dataset_name == "cornell":
         # Load list of images
-        dataset = '/home/aby/Workspace/Cornell/archive'
+        dataset = '/home/aby03/Workspace/MTP/Datasets/Cornell/archive'
         # with open(dataset+'/train_overfit_2.txt', 'r') as filehandle:
         with open(dataset+'/valid_1.txt', 'r') as filehandle:
         # with open(dataset+'/amazon_test.txt', 'r') as filehandle: ## To check Cornell trained model on amazon images

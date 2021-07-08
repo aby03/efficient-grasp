@@ -2,18 +2,25 @@
 EfficientGrasp model based on EfficientPose and EfficientDet to identify robotic grasps.
 ## Installation
 
-1. Install Ubuntu 18.04
+1. Install Ubuntu 20.04
 
-2. Perform pre-installation steps of CUDA installation. Install CUDA 11.0.
+2. Install cuda using deb local install (CUDA 11.4) from the following link.
+
+> https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#runfile
 
 3. Install libcudnn8
 
 4. Install miniconda. Create new conda environment.
-> conda create --name efficient-grasp python=3.7
+> conda create --name efficient-grasp
 > conda activate efficient-grasp
 > conda install tensorflow-gpu
-> conda install cv2
-> pip install keras_applications
+> conda install -c conda-forge opencv
+> conda install -c conda-forge matplotlib
+> conda install -c conda-forge imageio
+> conda install -c anaconda scikit-image 
+> conda install -c conda-forge keras-applications
+> conda install -c conda-forge tqdm 
+> conda install -c conda-forge shapely
 
 4. (Alternate) Unpack conda environment following this: https://www.anaconda.com/blog/moving-conda-environments
 
